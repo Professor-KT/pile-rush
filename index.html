@@ -94,9 +94,9 @@ button{font-family:inherit;cursor:pointer}
 #keyPill.got{border-color:var(--gold)}
 #keyPill.none img{opacity:.35;filter:grayscale(1)}
 #trayArea{height:74px;flex:none}
-.tools.rescue{height:50px;flex-shrink:0;margin:6px 0 0;gap:8px}.tools.rescue .bst{width:54px;min-width:40px;flex-shrink:1;height:46px}.tools.rescue .bst img{width:26px;height:26px}
+.tools.rescue{position:relative;height:50px;flex-shrink:0;margin:6px 0 0;gap:8px}.tools.rescue .bst{width:54px;min-width:40px;flex-shrink:1;height:46px}.tools.rescue .bst img{width:26px;height:26px}
 .rlabel{font-weight:900;font-size:12px;background:#0b2a7288;border-radius:8px;padding:4px 6px;white-space:nowrap}
-.rstat{flex:1;text-align:right;font-weight:800;font-size:12px;color:#fff}
+.rstat{position:absolute;right:0;bottom:52px;pointer-events:none;text-shadow:0 1px 3px #002;text-align:right;font-weight:800;font-size:12px;color:#fff}
 .bst.nocarry{opacity:.45}.bst.nocarry .cnt{background:#6d7799}
 .card{max-height:calc(100vh - 32px);overflow:auto}
 .prepscroll{max-height:calc(100vh - 330px);min-height:120px;overflow:auto;-webkit-overflow-scrolling:touch}
@@ -1323,7 +1323,7 @@ function claimPickup(it){
   else startAction(k,it.x,it.y,groups,it.x,it.y-S*.2);
 }
 /* ---------- rescue: wind / vacuum / compress. They never break the "every type is a multiple of 3" invariant,
-   never remove goal pieces or anything matching the tray, and are not consumed when they cannot act. ---------- */
+   vacuum matches one tray piece with two pile pieces; complete triples count toward goals. Unusable actions are not consumed. ---------- */
 const SAMPLES=new Map();
 function sampleOffsets(spr){if(SAMPLES.has(spr))return SAMPLES.get(spr);const out=[];for(let py=6;py<SP;py+=9)for(let px=6;px<SP;px+=9)if(spr.mask[py*SP+px]>200)out.push([px/F-UNITS/2,py/F-UNITS/2]);SAMPLES.set(spr,out);return out;}
 function isSelectable(it){if(it.state!=='pile')return false;const off=sampleOffsets(sprOf(it)),ps=poseOf(it),c=Math.cos(ps.rot),s=Math.sin(ps.rot),k=esz(it)/100,f=ps.flip?-1:1;
