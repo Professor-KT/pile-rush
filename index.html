@@ -39,7 +39,7 @@ button{font-family:inherit;cursor:pointer}
   -webkit-text-stroke:6px var(--navy);paint-order:stroke fill;text-shadow:0 3px 0 var(--navy)}
 .logo .t .p{color:#fff}.logo .t .r{color:var(--gold)}
 .logo small{display:block;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:2px;color:var(--muted);margin-top:2px}
-.row2{display:flex;gap:8px;align-items:stretch;height:66px;margin-top:4px}
+.row2{display:flex;gap:8px;align-items:stretch;height:94px;min-height:94px;flex-shrink:0;margin-top:4px}
 .timer{display:flex;align-items:center;gap:6px;padding:0 12px 0 8px;border-radius:18px;background:var(--navy);
   border:3px solid var(--gold);box-shadow:0 3px 0 #08205a,inset 0 0 0 2px #ffffff22;transition:background .2s,border-color .2s}
 .timer svg{width:32px;height:32px;flex:none}
@@ -62,10 +62,10 @@ button{font-family:inherit;cursor:pointer}
 .collect{flex:1;min-width:0;border-radius:18px;background:linear-gradient(#1b63d8,#1450bd);border:2px solid var(--edge);
   box-shadow:0 3px 0 #0b3c99;display:flex;flex-direction:column;align-items:center;padding:2px 6px 4px}
 .collect .ct{font-family:var(--font-display);font-weight:700;font-size:14px;-webkit-text-stroke:3px var(--navy);paint-order:stroke fill;line-height:1.2}
-#goals{display:flex;flex:1;width:100%;justify-content:space-around;align-items:center}
-.goal{display:flex;flex-direction:column;align-items:center;position:relative;flex:1;min-width:0}
+#goals{display:flex;flex:1;min-height:62px;width:100%;justify-content:space-around;align-items:center}
+.goal{display:flex;flex-direction:column;gap:2px;align-items:center;position:relative;flex:1;min-width:0}
 .goal+.goal::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:2px;background:#ffffff40}
-.goal img{width:46px;height:46px;object-fit:contain;transition:transform .15s}
+.goal img{width:46px;height:46px;flex-shrink:0;object-fit:contain;transition:transform .15s}
 .goal span{font-family:var(--font-display);font-weight:700;font-size:14px;line-height:1;-webkit-text-stroke:3px var(--navy);paint-order:stroke fill;font-variant-numeric:tabular-nums}
 .goal.bump img{transform:scale(1.3)}
 .goal.done span{color:#7dffa6}
@@ -165,7 +165,7 @@ textarea{width:100%;border-radius:10px;border:2px solid var(--edge);padding:8px;
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--sky2);color:#fff;font-weight:800;z-index:40;text-align:center;padding:24px}
 html[data-boot="ok"] #boot{display:none}
 @media (prefers-reduced-motion: reduce){.timer.low,.bst.on{animation:none}}
-@media (max-height:700px){.tools.rescue{height:44px}.tools.rescue .bst{height:40px}.row2{height:58px}.timer b{font-size:24px}.logo .t{font-size:28px}.tools{height:54px}.bst{height:50px}#trayArea{height:64px}}
+@media (max-height:700px){.tools.rescue{height:44px}.tools.rescue .bst{height:40px}.row2{height:94px;min-height:94px}.timer b{font-size:24px}.logo .t{font-size:28px}.tools{height:54px}.bst{height:50px}#trayArea{height:64px}}
 </style>
 </head>
 <body>
