@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#2b8cff" />
-<title>堆堆消 Pile Rush v0.5.2</title>
+<title>堆堆消 Pile Rush v0.5.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" />
@@ -210,7 +210,7 @@ html[data-boot="ok"] #boot{display:none}
   <div id="plus"><img alt="" data-icon="time"><span id="plusTxt">+10s</span></div>
 
   <div class="screen on" id="home">
-    <div class="logo"><div class="t"><span class="p">Pile</span> <span class="r">Rush</span></div><small>堆 堆 消 · v0.5.2</small></div>
+    <div class="logo"><div class="t"><span class="p">Pile</span> <span class="r">Rush</span></div><small>堆 堆 消 · v0.5.3</small></div>
     <canvas id="homeIcons" style="position:relative"></canvas>
     <div class="lvcard" id="homeLv">LEVEL 1</div>
     <div class="homewallet">
@@ -279,7 +279,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); // needed while loading saves
    Key 'pileRush.v4'. Older keys 'pileRush.v3' / 'pileRush.v2' are only READ (never changed or deleted).
    Every write bumps SAVE.rev; a tab whose rev is older than the stored one stops writing (no silent overwrite). */
 const KEY='pileRush.v5',LEGACY_KEYS=['pileRush.v4','pileRush.v3','pileRush.v2'],SCHEMA=5; // v5 adds rescue items, carry choices, seen-tips, reduced motion
-const APP_VERSION='0.5.2'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
+const APP_VERSION='0.5.3'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
 function defSave(){return{schema:SCHEMA,app:APP_VERSION,rev:0,createdAt:Date.now(),updatedAt:0,
   level:1,unlocked:1,credits:CFG.START_CREDITS,boosters:{...CFG.START_BOOSTERS},keys:{},cleared:{},stars:{},best:{},xp:0,score:0,runs:[],
   sound:true,haptic:true,visualFx:true,cbMarks:false,reducedMotion:null,carry:{},seen:{},txn:0,migratedFrom:null};}
@@ -414,7 +414,7 @@ const TOYS=[
   {id:'rbrick_b',shape:'roundbrick',color:'blue',name:'藍色圓積木'},
   {id:'slope_y',shape:'slope',color:'yellow',name:'黃色斜坡積木'},
   {id:'slope_g',shape:'slope',color:'green',name:'綠色斜坡積木'},
-  // v0.5.2: vehicles, instruments, buildings and more dinosaurs (colour + shape still the only match rule)
+  // v0.5.3: vehicles, instruments, buildings and more dinosaurs (colour + shape still the only match rule)
   {id:'moto_r',shape:'moto',color:'red',name:'紅色機車'},
   {id:'moto_b',shape:'moto',color:'blue',name:'藍色機車'},
   {id:'violin_br',shape:'violin',color:'brown',name:'棕色小提琴'},
@@ -878,8 +878,26 @@ function drawCoin(g){shade(g,g=>g.arc(0,0,40,0,TAU),'#ffcd1a',0,0,40,{hl:.8});g.
 const SP=192,UNITS=128,F=SP/UNITS;
 function mk(n){const c=document.createElement('canvas');c.width=c.height=n;return c;}
 function makeSprite(draw){
-  const body=mk(SP),g=body.getContext('2d');g.setTransform(F,0,0,F,SP/2,SP/2);g.lineJoin='round';draw(g);
-  const img=mk(SP),gi=img.getContext('2d');gi.shadowColor='rgba(6,22,70,.5)';gi.shadowBlur=9;gi.shadowOffsetY=6;gi.drawImage(body,0,0);
+  // v0.5.3: baked 2.5D plastic relief. All expensive compositing occurs once,
+  // never inside the animation loop. Front colours/details remain unchanged.
+  const front=mk(SP),gf=front.getContext('2d');gf.setTransform(F,0,0,F,SP/2,SP/2);gf.lineJoin='round';draw(gf);
+  const side=mk(SP),gs=side.getContext('2d');gs.drawImage(front,0,0);
+  gs.globalCompositeOperation='source-atop';const tone=gs.createLinearGradient(0,0,SP,SP);
+  tone.addColorStop(0,'rgba(10,25,58,.22)');tone.addColorStop(1,'rgba(10,25,58,.52)');gs.fillStyle=tone;gs.fillRect(0,0,SP,SP);
+  const body=mk(SP),g=body.getContext('2d');
+  // Cast a small solid extrusion down-right, then cap it with the original face.
+  for(let d=7;d>=1;d--)g.drawImage(side,d*.45,d);
+  g.drawImage(front,0,0);
+  // Thin upper-left inner rim: alpha difference stays inside the actual face.
+  const rim=mk(SP),gr=rim.getContext('2d');gr.drawImage(front,0,0);
+  gr.globalCompositeOperation='destination-out';gr.drawImage(front,1.3,2);
+  gr.globalCompositeOperation='source-in';gr.fillStyle='rgba(255,255,255,.5)';gr.fillRect(0,0,SP,SP);
+  g.drawImage(rim,0,0);
+  // Restrained soft face sheen, clipped to opaque pixels: no colour-obscuring white wash.
+  const sheen=mk(SP),gh=sheen.getContext('2d');gh.drawImage(front,0,0);gh.globalCompositeOperation='source-in';
+  const light=gh.createLinearGradient(0,0,SP*.8,SP);light.addColorStop(0,'rgba(255,255,255,.15)');light.addColorStop(.46,'rgba(255,255,255,.015)');light.addColorStop(1,'rgba(255,255,255,0)');gh.fillStyle=light;gh.fillRect(0,0,SP,SP);g.drawImage(sheen,0,0);
+  // Shadow is visual only. Hit mask is taken exclusively from the solid body.
+  const img=mk(SP),gi=img.getContext('2d');gi.shadowColor='rgba(6,22,55,.52)';gi.shadowBlur=7;gi.shadowOffsetX=1;gi.shadowOffsetY=5;gi.drawImage(body,0,0);
   const dark=mk(SP),gd=dark.getContext('2d');gd.drawImage(body,0,0);gd.globalCompositeOperation='source-atop';gd.fillStyle='#0b1238';gd.fillRect(0,0,SP,SP);
   const d=g.getImageData(0,0,SP,SP).data,mask=new Uint8Array(SP*SP);for(let i=0;i<mask.length;i++)mask[i]=d[i*4+3];
   return{body,img,dark,mask,url:body.toDataURL()};
@@ -995,8 +1013,8 @@ const sfx={
 /* ---------- level generation ---------- */
 function siblings(i){const t=TOYS[i];return TOYS.filter(o=>o.idx!==i&&(o.shape===t.shape||o.color===t.color)).map(o=>o.idx);}
 /* 1,000 levels. Deterministic per level: seed = base(L) + variant·100003, where VARIANTS[L] is the first variant
-   the old v0.5.0 solver selected. v0.5.2 expands layout/counts: old solutions are NOT a solvability certificate; full replay pending. */
-const SOLVE_MOVES='00600c00900900c01801b00c00c01200f01200c01501201500c04800c00901200f01b01501500c00f01501801201200f00f01201501b00f01501800f00f01500f00f00c00f00f00901201201200f00901200c01201200f01200f01401201501b02102100f01501500f01e01b01801200c01501b01202801801801e01501801201501b02101501e01800f02101e01801e01800f00f00f01801e00f01801501501501b01b01e01e01500f01500f01e01801801501501801501e01501b01201e01502102100f00f01b01e01801e01501500f01501800f01b02401b01e00f01b01201801501201b02101500f01b01b01e00f01b01800f02400f01e00f01e03900f01e01801b01b01801801501b01501b02101801800f00f00f01b01500f01801501b01500f00f01201201b01b01801202100f01801e01501b03002b01b02703001b01b01b01b01802401e01b01501e02100f02101b01207206c01b01201e00f01200f00f01801801b00f01b02401201800f01e01b06f00f01201202100f03302a01200f01b00f01201201201e01800f01500f01b01501501e03c03f01500f01200c01800f01800f03c01b00f00f01501801e01203600c00f01501b01801b00f00f01201802101b01b00f01502701800f00f01e00f01e01800f02101201501500f01502101b01201b01e01502101b02101204201201201b02d01801201501b01b01e00f02101201501b01b01501805402400f01501500f01e01201b00f02701e01501b02701801801b01801b01205d01801501800f01801801502701e01b01e01201b00f00f02101501801801201b01b01801201801b01500c02101e01b01e01803601501201800f01e03301b04801801801b02100f01803601201b00f01201e00f02101501200f02101801801b02101801b01801501801b01202401801201801501e01501b00f00f03901201e01501b01801501201202100f01201501e01801200f02a00f01b01801801e03f02401801e00f00f01800f01e01b01b01b01801e02100f00f01802101b02101b01501e01b01201b01801801b01501b01b01800f00f01b00f01807201b01801501500f06001201204801e01e01801b01e01501201800c02401e02100c01802401e02102d01b01e01501b02401801801201b01b02401203001800f02d01801800f01801801e02401b01801b01b01501500c01b00f01b01501201201e00f01b01201b01e03901b01500f01e01201501b01201b01801b01b01802101b02401501e01801501800f01501e01b02101800f00f03901e00f01801b01e01500f02103901b02701e01e00f01b01801b01801e01b01501500f00f01e01e00f00f01801800f01801801801201800f01e00f02106000f01b01800f01b01501500f01b03000f01502d01502401802401502101801200f01b03f01b03602101502400f01802100f01500f00c00f01b00f01801b01b01201804b03900f01801e01b00f01b01e00f01801201501800f01201500c01201800c01b00f01201200f02101500f01201201501501800c01202401200f02100f01b01502101b00f02400f01801501201b05401501502d07201501e00f00f01b01b00f01800f00f03000f02102100f01503000f01801201e00c03501b01e01501201e02a01801501501e01e01501801e03601800f01b01501e01801501b00f01b01e01801b02100f01801b01b01201e01801b01b01802101501501b01801500f01801201e01503601500f01b01e01500f00f01b01e03601e01201802100f01b01501b00f01b01200f01b01e00f03801801b01e02401e01b02a01b02d00f01b01500f01e01201501b01b02101501500c01801501501b01803c01801204801501801201801e02100f04302101b01201b00c01801e02101201e01e00f01801e01501e00f01501b01b01e01501e00f05101b01200f00f01b01b01204201801500f01501b01201501501803302a01201203c01e00f00f03301200f01b03901b00f01200f01501802701b01501e01501201800f00f02d01801e01801201b01b01801501801806300f01b02101201801e01501801501501b00f01801b01801e02101e01501b012018'; // historical v0.5.0 solution length, NOT verified for v0.5.2; retained rollback data per level (3 hex digits each) → time limit floor
+   the old v0.5.0 solver selected. v0.5.3 expands layout/counts: old solutions are NOT a solvability certificate; full replay pending. */
+const SOLVE_MOVES='00600c00900900c01801b00c00c01200f01200c01501201500c04800c00901200f01b01501500c00f01501801201200f00f01201501b00f01501800f00f01500f00f00c00f00f00901201201200f00901200c01201200f01200f01401201501b02102100f01501500f01e01b01801200c01501b01202801801801e01501801201501b02101501e01800f02101e01801e01800f00f00f01801e00f01801501501501b01b01e01e01500f01500f01e01801801501501801501e01501b01201e01502102100f00f01b01e01801e01501500f01501800f01b02401b01e00f01b01201801501201b02101500f01b01b01e00f01b01800f02400f01e00f01e03900f01e01801b01b01801801501b01501b02101801800f00f00f01b01500f01801501b01500f00f01201201b01b01801202100f01801e01501b03002b01b02703001b01b01b01b01802401e01b01501e02100f02101b01207206c01b01201e00f01200f00f01801801b00f01b02401201800f01e01b06f00f01201202100f03302a01200f01b00f01201201201e01800f01500f01b01501501e03c03f01500f01200c01800f01800f03c01b00f00f01501801e01203600c00f01501b01801b00f00f01201802101b01b00f01502701800f00f01e00f01e01800f02101201501500f01502101b01201b01e01502101b02101204201201201b02d01801201501b01b01e00f02101201501b01b01501805402400f01501500f01e01201b00f02701e01501b02701801801b01801b01205d01801501800f01801801502701e01b01e01201b00f00f02101501801801201b01b01801201801b01500c02101e01b01e01803601501201800f01e03301b04801801801b02100f01803601201b00f01201e00f02101501200f02101801801b02101801b01801501801b01202401801201801501e01501b00f00f03901201e01501b01801501201202100f01201501e01801200f02a00f01b01801801e03f02401801e00f00f01800f01e01b01b01b01801e02100f00f01802101b02101b01501e01b01201b01801801b01501b01b01800f00f01b00f01807201b01801501500f06001201204801e01e01801b01e01501201800c02401e02100c01802401e02102d01b01e01501b02401801801201b01b02401203001800f02d01801800f01801801e02401b01801b01b01501500c01b00f01b01501201201e00f01b01201b01e03901b01500f01e01201501b01201b01801b01b01802101b02401501e01801501800f01501e01b02101800f00f03901e00f01801b01e01500f02103901b02701e01e00f01b01801b01801e01b01501500f00f01e01e00f00f01801800f01801801801201800f01e00f02106000f01b01800f01b01501500f01b03000f01502d01502401802401502101801200f01b03f01b03602101502400f01802100f01500f00c00f01b00f01801b01b01201804b03900f01801e01b00f01b01e00f01801201501800f01201500c01201800c01b00f01201200f02101500f01201201501501800c01202401200f02100f01b01502101b00f02400f01801501201b05401501502d07201501e00f00f01b01b00f01800f00f03000f02102100f01503000f01801201e00c03501b01e01501201e02a01801501501e01e01501801e03601800f01b01501e01801501b00f01b01e01801b02100f01801b01b01201e01801b01b01802101501501b01801500f01801201e01503601500f01b01e01500f00f01b01e03601e01201802100f01b01501b00f01b01200f01b01e00f03801801b01e02401e01b02a01b02d00f01b01500f01e01201501b01b02101501500c01801501501b01803c01801204801501801201801e02100f04302101b01201b00c01801e02101201e01e00f01801e01501e00f01501b01b01e01501e00f05101b01200f00f01b01b01204201801500f01501b01201501501803302a01201203c01e00f00f03301200f01b03901b00f01200f01501802701b01501e01501201800f00f02d01801e01801201b01b01801501801806300f01b02101201801e01501801501501b00f01801b01801e02101e01501b012018'; // historical v0.5.0 solution length, NOT verified for v0.5.3; retained rollback data per level (3 hex digits each) → time limit floor
 const VARIANTS='0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'; // tools/build-variants.cjs: one base-36 digit per level (index L-1)
 const THEMES={toybox:['duck','bear','car','brick','rocket','rings','icecream','ball','cup','dice','star']}; // levels 1–10 (unchanged teaching set)
 const SERIES={food:['burger','fries','pizza'],jewelry:['ring','earrings','necklace'],sports:['hula'],toys:['duck','bear','ball','cup','dice','star','icecream','rings'],vehicles:['car','rocket','moto','bicycle','tricycle','scooter'],music:['violin','trumpet','drum'],
@@ -1049,7 +1067,7 @@ function genLevel(L,variant){
   if(colorUsed.endsWith('+accent')){const family=colorUsed.split('+')[0],accent=pool.find(i=>TOYS[i].color!==family);if(accent!=null&&!ids.includes(accent))ids[ids.length-1]=accent;}
   const counts={};ids.forEach(i=>counts[i]=3);
   const gl=goals.map(gid=>{const need=plan.scen==='wide'?3:3*(1+Math.floor(r()*Math.min(3,1+Math.floor(L/3))));counts[gid]=need;return{tid:gid,need};});
-  // v0.5.2: goal identity is the exact colour+shape tid. Never pad a goal type.
+  // v0.5.3: goal identity is the exact colour+shape tid. Never pad a goal type.
   const goalSet=new Set(goals),fillers=[...new Set(ids)].filter(i=>!goalSet.has(i));
   if(!fillers.length){const fallback=pool.find(i=>!goalSet.has(i));if(fallback!=null){fillers.push(fallback);counts[fallback]=3;}}
   let sum=Object.values(counts).reduce((a,b)=>a+b,0);
@@ -1058,7 +1076,7 @@ function genLevel(L,variant){
   const T=CFG.TIME,layers=clamp(Math.round(sum/T.itemsPerLayer),2,5);
   const raw=(T.base+needSum*T.perGoalItem+Object.keys(counts).length*T.perType+layers*T.perLayer+sum*T.perItem)*(hard?T.hardFactor:1);
   const mv=0,floor=0;
-  const teach=L<=10?T.teachBonus[0]:L<=20?T.teachBonus[1]:0; // v0.5.2: extra time while players learn the new rescue bar / prep flow
+  const teach=L<=10?T.teachBonus[0]:L<=20?T.teachBonus[1]:0; // v0.5.3: extra time while players learn the new rescue bar / prep flow
   const time=clamp(Math.max(Math.round(raw/T.round)*T.round,floor)+teach,T.min,T.max);
   return{L,hard,counts,goals:gl,time,seed,variant:v,keyId:'L'+L,key:CFG.KEY_REWARD>0,
     meta:{items:sum,types:Object.keys(counts).length,layers,goalItems:needSum,raw:+raw.toFixed(1),scen:plan.scen,theme:plan.theme,comp:plan.comp,series:plan.series,color:colorUsed,solveMoves:mv,floor}};
@@ -1117,7 +1135,7 @@ function newGame(L,ov,loadout){
     ov.items.forEach(o=>{if(o.kind==='key'&&SAVE.keys[lv.keyId])return;const m=mkItem(o.tid,PILE.x+o.x*PILE.w,PILE.y+o.y*PILE.h,o.z,o.rot||0,S*(o.size||1),o.kind,o.ptype);m.flip=!!o.flip;G.items.push(m);});
   }else{
     const list=[];Object.entries(lv.counts).forEach(([tid,n])=>{for(let i=0;i<n;i++)list.push({tid:+tid});});
-    const REAL=PILE;PILE={x:0,y:0,w:REAL.w,h:REAL.h}; // v0.5.2 generate at actual viewport aspect; no narrow fixed-aspect panel
+    const REAL=PILE;PILE={x:0,y:0,w:REAL.w,h:REAL.h}; // v0.5.3 generate at actual viewport aspect; no narrow fixed-aspect panel
     shuffle(list,r);placeItems(list,r);
     list.forEach(o=>{const m=mkItem(o.tid,o.x,o.y,o.z,o.rot,o.size);m.flip=!!o.flip;G.items.push(m);});
     const keyFree=lv.key&&!SAVE.keys[lv.keyId];
