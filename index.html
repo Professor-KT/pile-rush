@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#2b8cff" />
-<title>堆堆消 Pile Rush v0.5.1</title>
+<title>堆堆消 Pile Rush v0.5.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" />
@@ -210,7 +210,7 @@ html[data-boot="ok"] #boot{display:none}
   <div id="plus"><img alt="" data-icon="time"><span id="plusTxt">+10s</span></div>
 
   <div class="screen on" id="home">
-    <div class="logo"><div class="t"><span class="p">Pile</span> <span class="r">Rush</span></div><small>堆 堆 消 · v0.5.1</small></div>
+    <div class="logo"><div class="t"><span class="p">Pile</span> <span class="r">Rush</span></div><small>堆 堆 消 · v0.5.2</small></div>
     <canvas id="homeIcons" style="position:relative"></canvas>
     <div class="lvcard" id="homeLv">LEVEL 1</div>
     <div class="homewallet">
@@ -279,7 +279,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); // needed while loading saves
    Key 'pileRush.v4'. Older keys 'pileRush.v3' / 'pileRush.v2' are only READ (never changed or deleted).
    Every write bumps SAVE.rev; a tab whose rev is older than the stored one stops writing (no silent overwrite). */
 const KEY='pileRush.v5',LEGACY_KEYS=['pileRush.v4','pileRush.v3','pileRush.v2'],SCHEMA=5; // v5 adds rescue items, carry choices, seen-tips, reduced motion
-const APP_VERSION='0.5.1'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
+const APP_VERSION='0.5.2'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
 function defSave(){return{schema:SCHEMA,app:APP_VERSION,rev:0,createdAt:Date.now(),updatedAt:0,
   level:1,unlocked:1,credits:CFG.START_CREDITS,boosters:{...CFG.START_BOOSTERS},keys:{},cleared:{},stars:{},best:{},xp:0,score:0,runs:[],
   sound:true,haptic:true,visualFx:true,cbMarks:false,reducedMotion:null,carry:{},seen:{},txn:0,migratedFrom:null};}
@@ -414,7 +414,7 @@ const TOYS=[
   {id:'rbrick_b',shape:'roundbrick',color:'blue',name:'藍色圓積木'},
   {id:'slope_y',shape:'slope',color:'yellow',name:'黃色斜坡積木'},
   {id:'slope_g',shape:'slope',color:'green',name:'綠色斜坡積木'},
-  // v0.5.1: vehicles, instruments, buildings and more dinosaurs (colour + shape still the only match rule)
+  // v0.5.2: vehicles, instruments, buildings and more dinosaurs (colour + shape still the only match rule)
   {id:'moto_r',shape:'moto',color:'red',name:'紅色機車'},
   {id:'moto_b',shape:'moto',color:'blue',name:'藍色機車'},
   {id:'violin_br',shape:'violin',color:'brown',name:'棕色小提琴'},
@@ -435,6 +435,32 @@ const TOYS=[
   {id:'stego_y',shape:'stego',color:'yellow',name:'黃色劍龍'},
   {id:'ptero_b',shape:'ptero',color:'blue',name:'藍色翼龍'},
   {id:'ptero_r',shape:'ptero',color:'red',name:'紅色翼龍'},
+  {id:'taipei101_g',shape:'taipei101',color:'green',name:'綠色台北101'},
+  {id:'taipei101_b',shape:'taipei101',color:'blue',name:'藍色台北101'},
+  {id:'eiffel_p',shape:'eiffel',color:'purple',name:'紫色巴黎鐵塔'},
+  {id:'eiffel_y',shape:'eiffel',color:'yellow',name:'黃色巴黎鐵塔'},
+  {id:'pisa_b',shape:'pisa',color:'blue',name:'藍色比薩斜塔'},
+  {id:'pisa_y',shape:'pisa',color:'yellow',name:'黃色比薩斜塔'},
+  {id:'ring_yellow',shape:'ring',color:'yellow',name:'黃色戒指',sizeFactor:0.68},
+  {id:'ring_purple',shape:'ring',color:'purple',name:'紫色戒指',sizeFactor:0.68},
+  {id:'earrings_yellow',shape:'earrings',color:'yellow',name:'黃色耳環',sizeFactor:0.66},
+  {id:'earrings_purple',shape:'earrings',color:'purple',name:'紫色耳環',sizeFactor:0.66},
+  {id:'necklace_yellow',shape:'necklace',color:'yellow',name:'黃色項鍊',sizeFactor:0.72},
+  {id:'necklace_purple',shape:'necklace',color:'purple',name:'紫色項鍊',sizeFactor:0.72},
+  {id:'hula_yellow',shape:'hula',color:'yellow',name:'黃色呼啦圈',sizeFactor:1.3},
+  {id:'hula_purple',shape:'hula',color:'purple',name:'紫色呼啦圈',sizeFactor:1.3},
+  {id:'bicycle_yellow',shape:'bicycle',color:'yellow',name:'黃色腳踏車',sizeFactor:1.25},
+  {id:'bicycle_purple',shape:'bicycle',color:'purple',name:'紫色腳踏車',sizeFactor:1.25},
+  {id:'tricycle_yellow',shape:'tricycle',color:'yellow',name:'黃色三輪車',sizeFactor:1.25},
+  {id:'tricycle_purple',shape:'tricycle',color:'purple',name:'紫色三輪車',sizeFactor:1.25},
+  {id:'scooter_yellow',shape:'scooter',color:'yellow',name:'黃色滑板車',sizeFactor:1.2},
+  {id:'scooter_purple',shape:'scooter',color:'purple',name:'紫色滑板車',sizeFactor:1.2},
+  {id:'burger_yellow',shape:'burger',color:'yellow',name:'黃色漢堡'},
+  {id:'burger_red',shape:'burger',color:'red',name:'紅色漢堡'},
+  {id:'fries_yellow',shape:'fries',color:'yellow',name:'黃色薯條'},
+  {id:'fries_red',shape:'fries',color:'red',name:'紅色薯條'},
+  {id:'pizza_yellow',shape:'pizza',color:'yellow',name:'黃色披薩'},
+  {id:'pizza_red',shape:'pizza',color:'red',name:'紅色披薩'},
 ];
 TOYS.forEach((t,i)=>{t.idx=i;t.c=PAL[t.color];});
 
@@ -515,6 +541,51 @@ const DRAW={
     g.fillStyle='#4a3a6a';[[-26,0],[26,0],[-26,18],[26,18]].forEach(([x,y])=>{g.beginPath();rrp(g,x-3,y,6,9,3);g.fill();});
     g.fillStyle='#ff4d5a';g.beginPath();g.moveTo(-26,-46);g.lineTo(-26,-56);g.lineTo(-17,-52);g.closePath();g.fill();
     gloss(g,-30,8,3,14,0,.5);
+  },
+  burger(g,c){
+    shade(g,g=>{g.moveTo(-43,-9);g.bezierCurveTo(-42,-48,42,-48,43,-9);g.closePath();},c,0,-22,42);g.fillStyle=LT(c,.65);[[-22,-22],[-5,-31],[17,-24],[29,-15]].forEach(([x,y])=>{g.beginPath();g.ellipse(x,y,3,1.5,.4,0,TAU);g.fill();});
+    shade(g,g=>rrp(g,-44,-4,88,15,6),'#66ba3f',0,3,40);shade(g,g=>rrp(g,-42,9,84,14,6),'#884329',0,16,40);
+    g.fillStyle='#ffe675';g.beginPath();g.moveTo(-36,6);g.lineTo(36,6);g.lineTo(19,21);g.lineTo(-9,10);g.lineTo(-24,18);g.closePath();g.fill();shade(g,g=>rrp(g,-42,24,84,18,8),c,0,32,40);
+  },
+  fries(g,c){
+    [-30,-18,-6,6,18,30].forEach((x,k)=>{g.save();g.translate(x,0);g.rotate((k-2.5)*.065);shade(g,g=>rrp(g,-5,-50+(k%3)*7,10,66,2),'#ffd44e',0,-18,28,{lw:1.1});g.restore();});
+    shade(g,g=>{g.moveTo(-39,-10);g.quadraticCurveTo(0,6,39,-10);g.lineTo(30,45);g.lineTo(-30,45);g.closePath();},c,0,18,38);g.fillStyle=LT(c,.65);g.font='bold 26px sans-serif';g.textAlign='center';g.fillText('★',0,31);
+  },
+  pizza(g,c){
+    shade(g,g=>{g.moveTo(-43,-36);g.quadraticCurveTo(0,-53,43,-36);g.lineTo(0,49);g.closePath();},'#ffd769',0,0,43);
+    g.strokeStyle=c;g.lineWidth=13;g.lineCap='round';g.beginPath();g.moveTo(-42,-34);g.quadraticCurveTo(0,-49,42,-34);g.stroke();
+    [[-16,-19],[17,-14],[0,12]].forEach(([x,y])=>{shade(g,g=>g.arc(x,y,8,0,TAU),c,x,y,8,{lw:1});});
+    g.strokeStyle='#64a749';g.lineWidth=3;[[-5,-24],[15,2],[-6,29]].forEach(([x,y])=>{g.beginPath();g.moveTo(x-3,y-3);g.lineTo(x+3,y+3);g.stroke();});
+  },
+  ring(g,c){g.strokeStyle=DK(c,.35);g.lineWidth=14;g.beginPath();g.ellipse(0,12,27,28,0,0,TAU);g.stroke();g.strokeStyle=c;g.lineWidth=9;g.stroke();shade(g,g=>{g.moveTo(-17,-25);g.lineTo(0,-43);g.lineTo(17,-25);g.lineTo(0,-10);g.closePath();},LT(c,.5),0,-26,19);},
+  earrings(g,c){[-22,22].forEach(x=>{g.strokeStyle=c;g.lineWidth=5;g.beginPath();g.arc(x,-26,11,Math.PI,TAU);g.lineTo(x+11,-10);g.stroke();shade(g,g=>{g.moveTo(x,-12);g.bezierCurveTo(x+24,12,x+17,41,x,44);g.bezierCurveTo(x-17,41,x-24,12,x,-12);g.closePath();},c,x,18,24);});},
+  necklace(g,c){g.strokeStyle=DK(c,.3);g.lineWidth=8;g.beginPath();g.moveTo(-34,-40);g.bezierCurveTo(-38,0,-20,27,0,29);g.bezierCurveTo(20,27,38,0,34,-40);g.stroke();g.strokeStyle=c;g.lineWidth=4;g.stroke();shade(g,g=>{g.moveTo(0,13);g.lineTo(16,31);g.lineTo(0,49);g.lineTo(-16,31);g.closePath();},LT(c,.35),0,31,19);},
+  hula(g,c){g.save();g.rotate(-.2);g.strokeStyle=DK(c,.4);g.lineWidth=16;g.beginPath();g.ellipse(0,0,40,34,0,0,TAU);g.stroke();g.strokeStyle=c;g.lineWidth=11;g.stroke();g.strokeStyle=LT(c,.6);g.lineWidth=3;g.beginPath();g.ellipse(-2,-2,40,34,0,Math.PI,TAU);g.stroke();g.restore();},
+  bicycle(g,c){this._cycle(g,c,false);},
+  tricycle(g,c){
+    const wheel=(x,y,r)=>{shade(g,g=>g.arc(x,y,r,0,TAU),'#253753',x,y,r,{lw:1.5});g.strokeStyle='#dceaff';g.lineWidth=2;g.beginPath();g.moveTo(x-r+4,y);g.lineTo(x+r-4,y);g.moveTo(x,y-r+4);g.lineTo(x,y+r-4);g.stroke();};
+    wheel(-31,18,12);wheel(28,23,23);wheel(-18,37,13);
+    g.strokeStyle=c;g.lineWidth=9;g.lineJoin='round';g.beginPath();g.moveTo(-31,18);g.lineTo(-18,37);g.lineTo(-8,13);g.lineTo(21,6);g.lineTo(17,-29);g.stroke();
+    shade(g,g=>rrp(g,-30,-6,30,15,5),c,-15,1,18);shade(g,g=>rrp(g,-31,-31,11,29,4),c,-26,-15,14);
+    g.strokeStyle='#243955';g.lineWidth=7;g.beginPath();g.moveTo(4,-31);g.lineTo(29,-31);g.stroke();g.strokeStyle=LT(c,.5);g.lineWidth=4;g.beginPath();g.moveTo(28,23);g.lineTo(40,29);g.stroke();
+  },
+  _cycle(g,c,tri){const wheel=(x,y,r)=>{g.strokeStyle='#152743';g.lineWidth=7;g.beginPath();g.arc(x,y,r,0,TAU);g.stroke();g.strokeStyle='#d9ebff';g.lineWidth=2;g.beginPath();g.moveTo(x-r,y);g.lineTo(x+r,y);g.moveTo(x,y-r);g.lineTo(x,y+r);g.stroke();};
+    wheel(-30,24,tri?14:20);if(tri)wheel(-13,34,12);wheel(31,22,22);g.strokeStyle=c;g.lineWidth=8;g.lineJoin='round';g.beginPath();g.moveTo(-30,24);g.lineTo(-9,-11);g.lineTo(10,24);g.closePath();g.moveTo(-9,-11);g.lineTo(22,-11);g.lineTo(10,24);g.moveTo(31,22);g.lineTo(20,-33);g.lineTo(32,-36);g.stroke();g.strokeStyle='#243955';g.lineWidth=7;g.beginPath();g.moveTo(-20,-15);g.lineTo(-3,-15);g.stroke();if(tri){g.fillStyle=LT(c,.4);g.fillRect(-37,3,24,9);}},
+  scooter(g,c){g.strokeStyle='#152743';g.lineWidth=8;[-32,32].forEach(x=>{g.beginPath();g.arc(x,33,12,0,TAU);g.stroke();});g.strokeStyle=c;g.lineWidth=10;g.lineJoin='round';g.beginPath();g.moveTo(-34,22);g.lineTo(24,22);g.lineTo(18,-39);g.stroke();g.strokeStyle=DK(c,.4);g.lineWidth=7;g.beginPath();g.moveTo(2,-40);g.lineTo(34,-40);g.stroke();},
+  taipei101(g,c){
+    shade(g,g=>rrp(g,-22,36,44,10,3),c,0,40,24);
+    for(let k=0;k<8;k++){const y=36-k*10,w=20-k*.7;shade(g,g=>{g.moveTo(-w,y-9);g.lineTo(w,y-9);g.lineTo(w-3,y);g.lineTo(-w+3,y);g.closePath();},c,0,y-4,w,{lw:1.2});g.strokeStyle=LT(c,.65);g.lineWidth=1.3;g.beginPath();g.moveTo(-w+3,y-6);g.lineTo(w-3,y-6);g.stroke();}
+    g.strokeStyle=DK(c,.4);g.lineWidth=4;g.beginPath();g.moveTo(0,-43);g.lineTo(0,-58);g.stroke();
+  },
+  eiffel(g,c){
+    shade(g,g=>{g.moveTo(0,-55);g.lineTo(7,-14);g.lineTo(17,12);g.lineTo(36,44);g.lineTo(19,44);g.quadraticCurveTo(0,7,-19,44);g.lineTo(-36,44);g.lineTo(-17,12);g.lineTo(-7,-14);g.closePath();},c,0,0,42);
+    g.strokeStyle=LT(c,.6);g.lineWidth=2;for(let y=-25;y<30;y+=12){const w=4+(y+25)*.32;g.beginPath();g.moveTo(-w,y);g.lineTo(w,y+10);g.moveTo(w,y);g.lineTo(-w,y+10);g.stroke();}
+    [-8,15,31].forEach((y,k)=>{g.fillStyle=DK(c,.25);g.fillRect(-[11,22,29][k],y,[22,44,58][k],5);});
+  },
+  pisa(g,c){
+    g.save();g.rotate(.19);shade(g,g=>rrp(g,-24,-43,48,85,9),c,0,0,35);
+    for(let k=0;k<6;k++){const y=-34+k*13;g.fillStyle=LT(c,.65);g.fillRect(-27,y+8,54,4);for(let x=-17;x<=17;x+=11){g.fillStyle=DK(c,.5);g.beginPath();rrp(g,x-3,y,6,8,3);g.fill();}}
+    shade(g,g=>rrp(g,-18,-53,36,13,4),c,0,-47,20);g.restore();
   },
   tower(g,c){g.save();g.scale(1.25,1);g.translate(-3,0);this._tower(g,c);g.restore();},
   _tower(g,c){
@@ -924,13 +995,13 @@ const sfx={
 /* ---------- level generation ---------- */
 function siblings(i){const t=TOYS[i];return TOYS.filter(o=>o.idx!==i&&(o.shape===t.shape||o.color===t.color)).map(o=>o.idx);}
 /* 1,000 levels. Deterministic per level: seed = base(L) + variant·100003, where VARIANTS[L] is the first variant
-   the old v0.5.0 solver selected. v0.5.1 expands layout/counts: old solutions are NOT a solvability certificate; full replay pending. */
-const SOLVE_MOVES='00600c00900900c01801b00c00c01200f01200c01501201500c04800c00901200f01b01501500c00f01501801201200f00f01201501b00f01501800f00f01500f00f00c00f00f00901201201200f00901200c01201200f01200f01401201501b02102100f01501500f01e01b01801200c01501b01202801801801e01501801201501b02101501e01800f02101e01801e01800f00f00f01801e00f01801501501501b01b01e01e01500f01500f01e01801801501501801501e01501b01201e01502102100f00f01b01e01801e01501500f01501800f01b02401b01e00f01b01201801501201b02101500f01b01b01e00f01b01800f02400f01e00f01e03900f01e01801b01b01801801501b01501b02101801800f00f00f01b01500f01801501b01500f00f01201201b01b01801202100f01801e01501b03002b01b02703001b01b01b01b01802401e01b01501e02100f02101b01207206c01b01201e00f01200f00f01801801b00f01b02401201800f01e01b06f00f01201202100f03302a01200f01b00f01201201201e01800f01500f01b01501501e03c03f01500f01200c01800f01800f03c01b00f00f01501801e01203600c00f01501b01801b00f00f01201802101b01b00f01502701800f00f01e00f01e01800f02101201501500f01502101b01201b01e01502101b02101204201201201b02d01801201501b01b01e00f02101201501b01b01501805402400f01501500f01e01201b00f02701e01501b02701801801b01801b01205d01801501800f01801801502701e01b01e01201b00f00f02101501801801201b01b01801201801b01500c02101e01b01e01803601501201800f01e03301b04801801801b02100f01803601201b00f01201e00f02101501200f02101801801b02101801b01801501801b01202401801201801501e01501b00f00f03901201e01501b01801501201202100f01201501e01801200f02a00f01b01801801e03f02401801e00f00f01800f01e01b01b01b01801e02100f00f01802101b02101b01501e01b01201b01801801b01501b01b01800f00f01b00f01807201b01801501500f06001201204801e01e01801b01e01501201800c02401e02100c01802401e02102d01b01e01501b02401801801201b01b02401203001800f02d01801800f01801801e02401b01801b01b01501500c01b00f01b01501201201e00f01b01201b01e03901b01500f01e01201501b01201b01801b01b01802101b02401501e01801501800f01501e01b02101800f00f03901e00f01801b01e01500f02103901b02701e01e00f01b01801b01801e01b01501500f00f01e01e00f00f01801800f01801801801201800f01e00f02106000f01b01800f01b01501500f01b03000f01502d01502401802401502101801200f01b03f01b03602101502400f01802100f01500f00c00f01b00f01801b01b01201804b03900f01801e01b00f01b01e00f01801201501800f01201500c01201800c01b00f01201200f02101500f01201201501501800c01202401200f02100f01b01502101b00f02400f01801501201b05401501502d07201501e00f00f01b01b00f01800f00f03000f02102100f01503000f01801201e00c03501b01e01501201e02a01801501501e01e01501801e03601800f01b01501e01801501b00f01b01e01801b02100f01801b01b01201e01801b01b01802101501501b01801500f01801201e01503601500f01b01e01500f00f01b01e03601e01201802100f01b01501b00f01b01200f01b01e00f03801801b01e02401e01b02a01b02d00f01b01500f01e01201501b01b02101501500c01801501501b01803c01801204801501801201801e02100f04302101b01201b00c01801e02101201e01e00f01801e01501e00f01501b01b01e01501e00f05101b01200f00f01b01b01204201801500f01501b01201501501803302a01201203c01e00f00f03301200f01b03901b00f01200f01501802701b01501e01501201800f00f02d01801e01801201b01b01801501801806300f01b02101201801e01501801501501b00f01801b01801e02101e01501b012018'; // historical v0.5.0 solution length, NOT verified for v0.5.1; retained rollback data per level (3 hex digits each) → time limit floor
+   the old v0.5.0 solver selected. v0.5.2 expands layout/counts: old solutions are NOT a solvability certificate; full replay pending. */
+const SOLVE_MOVES='00600c00900900c01801b00c00c01200f01200c01501201500c04800c00901200f01b01501500c00f01501801201200f00f01201501b00f01501800f00f01500f00f00c00f00f00901201201200f00901200c01201200f01200f01401201501b02102100f01501500f01e01b01801200c01501b01202801801801e01501801201501b02101501e01800f02101e01801e01800f00f00f01801e00f01801501501501b01b01e01e01500f01500f01e01801801501501801501e01501b01201e01502102100f00f01b01e01801e01501500f01501800f01b02401b01e00f01b01201801501201b02101500f01b01b01e00f01b01800f02400f01e00f01e03900f01e01801b01b01801801501b01501b02101801800f00f00f01b01500f01801501b01500f00f01201201b01b01801202100f01801e01501b03002b01b02703001b01b01b01b01802401e01b01501e02100f02101b01207206c01b01201e00f01200f00f01801801b00f01b02401201800f01e01b06f00f01201202100f03302a01200f01b00f01201201201e01800f01500f01b01501501e03c03f01500f01200c01800f01800f03c01b00f00f01501801e01203600c00f01501b01801b00f00f01201802101b01b00f01502701800f00f01e00f01e01800f02101201501500f01502101b01201b01e01502101b02101204201201201b02d01801201501b01b01e00f02101201501b01b01501805402400f01501500f01e01201b00f02701e01501b02701801801b01801b01205d01801501800f01801801502701e01b01e01201b00f00f02101501801801201b01b01801201801b01500c02101e01b01e01803601501201800f01e03301b04801801801b02100f01803601201b00f01201e00f02101501200f02101801801b02101801b01801501801b01202401801201801501e01501b00f00f03901201e01501b01801501201202100f01201501e01801200f02a00f01b01801801e03f02401801e00f00f01800f01e01b01b01b01801e02100f00f01802101b02101b01501e01b01201b01801801b01501b01b01800f00f01b00f01807201b01801501500f06001201204801e01e01801b01e01501201800c02401e02100c01802401e02102d01b01e01501b02401801801201b01b02401203001800f02d01801800f01801801e02401b01801b01b01501500c01b00f01b01501201201e00f01b01201b01e03901b01500f01e01201501b01201b01801b01b01802101b02401501e01801501800f01501e01b02101800f00f03901e00f01801b01e01500f02103901b02701e01e00f01b01801b01801e01b01501500f00f01e01e00f00f01801800f01801801801201800f01e00f02106000f01b01800f01b01501500f01b03000f01502d01502401802401502101801200f01b03f01b03602101502400f01802100f01500f00c00f01b00f01801b01b01201804b03900f01801e01b00f01b01e00f01801201501800f01201500c01201800c01b00f01201200f02101500f01201201501501800c01202401200f02100f01b01502101b00f02400f01801501201b05401501502d07201501e00f00f01b01b00f01800f00f03000f02102100f01503000f01801201e00c03501b01e01501201e02a01801501501e01e01501801e03601800f01b01501e01801501b00f01b01e01801b02100f01801b01b01201e01801b01b01802101501501b01801500f01801201e01503601500f01b01e01500f00f01b01e03601e01201802100f01b01501b00f01b01200f01b01e00f03801801b01e02401e01b02a01b02d00f01b01500f01e01201501b01b02101501500c01801501501b01803c01801204801501801201801e02100f04302101b01201b00c01801e02101201e01e00f01801e01501e00f01501b01b01e01501e00f05101b01200f00f01b01b01204201801500f01501b01201501501803302a01201203c01e00f00f03301200f01b03901b00f01200f01501802701b01501e01501201800f00f02d01801e01801201b01b01801501801806300f01b02101201801e01501801501501b00f01801b01801e02101e01501b012018'; // historical v0.5.0 solution length, NOT verified for v0.5.2; retained rollback data per level (3 hex digits each) → time limit floor
 const VARIANTS='0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'; // tools/build-variants.cjs: one base-36 digit per level (index L-1)
 const THEMES={toybox:['duck','bear','car','brick','rocket','rings','icecream','ball','cup','dice','star']}; // levels 1–10 (unchanged teaching set)
-const SERIES={toys:['duck','bear','ball','cup','dice','star','icecream','rings'],vehicles:['car','rocket','moto'],music:['violin','trumpet','drum'],
-  buildings:['house','castle','tower','brick','roundbrick','slope'],dinos:['dino','longneck','tricera','stego','ptero'],creatures:['fish','octopus','turtle','butterfly']};
-const SERIES_NAME={toys:'玩具',vehicles:'交通',music:'樂器',buildings:'建築',dinos:'恐龍',creatures:'生物'};
+const SERIES={food:['burger','fries','pizza'],jewelry:['ring','earrings','necklace'],sports:['hula'],toys:['duck','bear','ball','cup','dice','star','icecream','rings'],vehicles:['car','rocket','moto','bicycle','tricycle','scooter'],music:['violin','trumpet','drum'],
+  buildings:['house','castle','tower','brick','roundbrick','slope','taipei101','eiffel','pisa'],dinos:['dino','longneck','tricera','stego','ptero'],creatures:['fish','octopus','turtle','butterfly']};
+const SERIES_NAME={food:'食物',jewelry:'珠寶',sports:'運動',toys:'玩具',vehicles:'交通',music:'樂器',buildings:'建築',dinos:'恐龍',creatures:'生物'};
 const COLOR_FAMILY={warm:['red','orange','yellow','pink','brown'],cool:['blue','green','purple','white']};
 const SCENARIOS=['standard','lookalike','deep','wide','standard','lookalike'];
 function levelPlan(L){ // difficulty curve: ramps over 1–200, then a bounded plateau with seeded variation (no endless squeeze)
@@ -956,27 +1027,38 @@ function genLevel(L,variant){
   let pool=TOYS.filter(t=>!shapes||shapes.includes(t.shape)).map(t=>t.idx);
   let colorUsed='mixed';
   if(plan.color!=='mixed'){const fam=COLOR_FAMILY[plan.color],f=pool.filter(i=>fam.includes(TOYS[i].color));if(f.length>=Math.max(6,plan.goals+3)){pool=f;colorUsed=plan.color;}}
+  if(L>=20&&L%7===0){
+    const family=['purple','blue','green','yellow'][Math.floor(L/7)%4];
+    const mono=TOYS.filter(t=>t.color===family).map(t=>t.idx);
+    if(mono.length>=4){pool=mono;plan.comp='all';plan.series=[];plan.theme=family+'-family';
+      const accent=L%14===0;if(accent){const others=TOYS.filter(t=>t.color!==family);pool.push(others[Math.floor(r()*others.length)].idx);}
+      colorUsed=family+(accent?'+accent':'');nTypes=Math.min(nTypes,pool.length);}
+  }
   const restricted=plan.comp==='pure'||plan.comp==='mixed'||colorUsed!=='mixed';
   if(restricted)nTypes=Math.min(nTypes,pool.length);            // pure / mixed series and colour families never pull in other shapes
   const rest=plan.comp==='toybox'?TOYS.map(t=>t.idx).filter(i=>!pool.includes(i)):[];
-  const cap=colorUsed!=='mixed'?Math.ceil(nTypes/2):Math.ceil(nTypes/4),cc={},ids=[];
+  const cap=/^(purple|blue|green|yellow)/.test(colorUsed)?nTypes:colorUsed!=='mixed'?Math.ceil(nTypes/2):Math.ceil(nTypes/4),cc={},ids=[];
   for(const i of [...shuffle(pool.slice(),r),...shuffle(rest.slice(),r)]){if(ids.length>=nTypes)break;const c=TOYS[i].color;if((cc[c]||0)>=cap)continue;cc[c]=(cc[c]||0)+1;ids.push(i);}
   if(L===1){ids.length=0;['duck_y','star_pk','duck_b','bear_br','car_r','car_b','brick_y','ball_r','cup_b'].forEach(id=>ids.push(TOYS.find(t=>t.id===id).idx));}
-  const nGoals=Math.min(plan.goals,ids.length);
+  const nGoals=Math.min(plan.goals,Math.max(1,ids.length-1)); // reserve a non-goal filler identity
   const goals=ids.slice(0,nGoals);
   if(L>1)goals.forEach((gid,k)=>{ // each goal gets a look-alike (same shape or same colour) present, from the same pool
-    if(!siblings(gid).some(s=>ids.includes(s))){const cand=siblings(gid).filter(s=>!ids.includes(s)&&(!restricted||pool.includes(s)));if(cand.length){ids[ids.length-1-k]=cand[Math.floor(r()*cand.length)];}}});
+    if(!siblings(gid).some(s=>ids.includes(s))){const cand=siblings(gid).filter(s=>!ids.includes(s)&&(!restricted||pool.includes(s)));if(cand.length&&ids.length-1-k>=nGoals){ids[ids.length-1-k]=cand[Math.floor(r()*cand.length)];}}});
   if(plan.scen==='lookalike'){ // add the same-shape sibling for every goal where possible
     goals.forEach(gid=>{const sib=TOYS.filter(o=>o.shape===TOYS[gid].shape&&o.idx!==gid&&!ids.includes(o.idx)&&(!restricted||pool.includes(o.idx)));if(sib.length&&ids.length>nGoals+1)ids[nGoals+Math.floor(r()*(ids.length-nGoals))]=sib[0].idx;});}
+  if(colorUsed.endsWith('+accent')){const family=colorUsed.split('+')[0],accent=pool.find(i=>TOYS[i].color!==family);if(accent!=null&&!ids.includes(accent))ids[ids.length-1]=accent;}
   const counts={};ids.forEach(i=>counts[i]=3);
-  const gl=goals.map(gid=>{const need=plan.scen==='wide'?3:3*(1+Math.floor(r()*Math.min(3,1+Math.floor(L/3))));counts[gid]=need+(r()<.5?3:0);return{tid:gid,need};});
-  let sum=Object.values(counts).reduce((a,b)=>a+b,0),guard=0;
-  while(sum<N&&guard++<500){const i=ids[Math.floor(r()*ids.length)];counts[i]+=3;sum+=3;}
+  const gl=goals.map(gid=>{const need=plan.scen==='wide'?3:3*(1+Math.floor(r()*Math.min(3,1+Math.floor(L/3))));counts[gid]=need;return{tid:gid,need};});
+  // v0.5.2: goal identity is the exact colour+shape tid. Never pad a goal type.
+  const goalSet=new Set(goals),fillers=[...new Set(ids)].filter(i=>!goalSet.has(i));
+  if(!fillers.length){const fallback=pool.find(i=>!goalSet.has(i));if(fallback!=null){fillers.push(fallback);counts[fallback]=3;}}
+  let sum=Object.values(counts).reduce((a,b)=>a+b,0);
+  while(sum<N&&fillers.length){const i=fillers[Math.floor(r()*fillers.length)];counts[i]+=3;sum+=3;}
   const needSum=gl.reduce((s,g)=>s+g.need,0);
   const T=CFG.TIME,layers=clamp(Math.round(sum/T.itemsPerLayer),2,5);
   const raw=(T.base+needSum*T.perGoalItem+Object.keys(counts).length*T.perType+layers*T.perLayer+sum*T.perItem)*(hard?T.hardFactor:1);
   const mv=0,floor=0;
-  const teach=L<=10?T.teachBonus[0]:L<=20?T.teachBonus[1]:0; // v0.5.1: extra time while players learn the new rescue bar / prep flow
+  const teach=L<=10?T.teachBonus[0]:L<=20?T.teachBonus[1]:0; // v0.5.2: extra time while players learn the new rescue bar / prep flow
   const time=clamp(Math.max(Math.round(raw/T.round)*T.round,floor)+teach,T.min,T.max);
   return{L,hard,counts,goals:gl,time,seed,variant:v,keyId:'L'+L,key:CFG.KEY_REWARD>0,
     meta:{items:sum,types:Object.keys(counts).length,layers,goalItems:needSum,raw:+raw.toFixed(1),scen:plan.scen,theme:plan.theme,comp:plan.comp,series:plan.series,color:colorUsed,solveMoves:mv,floor}};
@@ -1035,7 +1117,7 @@ function newGame(L,ov,loadout){
     ov.items.forEach(o=>{if(o.kind==='key'&&SAVE.keys[lv.keyId])return;const m=mkItem(o.tid,PILE.x+o.x*PILE.w,PILE.y+o.y*PILE.h,o.z,o.rot||0,S*(o.size||1),o.kind,o.ptype);m.flip=!!o.flip;G.items.push(m);});
   }else{
     const list=[];Object.entries(lv.counts).forEach(([tid,n])=>{for(let i=0;i<n;i++)list.push({tid:+tid});});
-    const REAL=PILE;PILE={x:0,y:0,w:REAL.w,h:REAL.h}; // v0.5.1 generate at actual viewport aspect; no narrow fixed-aspect panel
+    const REAL=PILE;PILE={x:0,y:0,w:REAL.w,h:REAL.h}; // v0.5.2 generate at actual viewport aspect; no narrow fixed-aspect panel
     shuffle(list,r);placeItems(list,r);
     list.forEach(o=>{const m=mkItem(o.tid,o.x,o.y,o.z,o.rot,o.size);m.flip=!!o.flip;G.items.push(m);});
     const keyFree=lv.key&&!SAVE.keys[lv.keyId];
@@ -1050,7 +1132,7 @@ function newGame(L,ov,loadout){
     for(let i=0;i<n;i++){const pk=mkItem(-2,PILE.x+PILE.w*(.15+r()*.7),PILE.y+PILE.h*(.15+r()*.7),maxZ*(.35+r()*.45),(r()-.5)*.6,S*P.size,'pickup',rollPickup(r,xp));G.items.push(pk);G.pickupsSpawned++;}
     // disguised trap (mid/late levels only): looks like a toy of this level, keeps a learnable warning mark; placed where it covers least
     if(L>=CFG.TRAP.fromLevel&&!lv.noTrap){const tr=rngOf(lv.seed*3+11);if(tr()<CFG.TRAP.chance){const kinds=CFG.TRAP.kinds,kind=kinds[Math.floor(tr()*kinds.length)];
-      const toyTids=Object.keys(lv.counts).map(Number),dis=toyTids[Math.floor(tr()*toyTids.length)],sz=S*.8;let best=null,bs=1e9;
+      const toyTids=Object.keys(lv.counts).map(Number).filter(t=>!lv.goals.some(g=>g.tid===t)),dis=toyTids[Math.floor(tr()*toyTids.length)],sz=S*.8;let best=null,bs=1e9;
       for(let c=0;c<24;c++){const x=PILE.w*(.15+tr()*.7),y=PILE.h*(.15+tr()*.7);const n=G.items.filter(i=>(i.x-x)**2+(i.y-y)**2<(sz*.7)**2).length;if(n<bs){bs=n;best={x,y};}}
       const mz=Math.max(...G.items.map(i=>i.z));const t=mkItem(-2,best.x,best.y,mz+.5,(tr()-.5)*.6,sz,'pickup',kind);t.trap=true;t.disguise=dis;G.items.push(t);G.trapCount=1;}}
     for(const it of G.items){it.x+=REAL.x;it.y+=REAL.y;}PILE=REAL;
@@ -1063,7 +1145,7 @@ function newGame(L,ov,loadout){
   G.sizeK=1;G.compress=null;setupLevelEvents();resumeActive(performance.now());renderBoosters();
   lastSec=-1;updateHud();return true;
 }
-function mkItem(tid,x,y,z,rot,size,kind,ptype){const R=Math.random;return{uid:G.uid++,tid,kind:kind||(tid<0?'key':'toy'),ptype,x,y,z,rot,size,state:'pile',shade:0,tshade:0,t:0,
+function mkItem(tid,x,y,z,rot,size,kind,ptype){const R=Math.random;if(tid>=0){const factor=TOYS[tid].sizeFactor||1;size=Math.max(44,size*factor);}return{uid:G.uid++,tid,kind:kind||(tid<0?'key':'toy'),ptype,x,y,z,rot,size,state:'pile',shade:0,tshade:0,t:0,
   jx:0,jy:0,jr:0,dyn:false,tx:null,ty:null,trot:null,f1:.7+R()*.6,f2:.7+R()*.6,p1:R()*TAU,p2:R()*TAU,p3:R()*TAU};}
 const poseOf=it=>({x:it.x+it.jx,y:it.y+it.jy,rot:it.rot+it.jr,flip:!!it.flip});
 const esz=it=>{const k=(it.state==='pile'&&G&&G.sizeK)||1;if(k>=1)return it.size*k;return Math.max(it.size*k,Math.min(it.size,CFG.RESCUE.compressMinPx));}; // compress shrinks pile pieces, never below a tappable floor
@@ -1902,7 +1984,7 @@ document.addEventListener('visibilitychange',()=>{const now=performance.now();if
 function loop(now){const raw=now-last,dt=Math.min(.05,raw/1000);last=now;
   activeClock(performance.now());frameEMA=frameEMA*.9+Math.min(100,raw)*.1;update(dt);render(now);updateHud();requestAnimationFrame(loop);}
 addEventListener('resize',()=>{const op={...PILE},ot={...TRAY};layout();
-  if(G){if(G.wind){for(const p of G.wind.poses){p.it.x=p.x;p.it.y=p.y;p.it.rot=p.rot;}G.wind=null;}const sw=PILE.w/op.w,sh=PILE.h/op.h,ss=Math.min(sw,sh);G.items.forEach(it=>{if(it.state==='pile'||it.state==='fx'){it.x=PILE.x+(it.x-op.x)*sw;it.y=PILE.y+(it.y-op.y)*sh;it.size*=ss;if(it.tx!=null){it.tx=PILE.x+(it.tx-op.x)*sw;it.ty=PILE.y+(it.ty-op.y)*sh;}}});S*=ss;}
+  if(G){if(G.wind){for(const p of G.wind.poses){p.it.x=p.x;p.it.y=p.y;p.it.rot=p.rot;}G.wind=null;}const sw=PILE.w/op.w,sh=PILE.h/op.h,ss=Math.min(sw,sh);G.items.forEach(it=>{if(it.state==='pile'||it.state==='fx'){it.x=PILE.x+(it.x-op.x)*sw;it.y=PILE.y+(it.y-op.y)*sh;it.size=Math.max(it.kind==='toy'?44:0,it.size*ss);if(it.tx!=null){it.tx=PILE.x+(it.tx-op.x)*sw;it.ty=PILE.y+(it.ty-op.y)*sh;}}});S*=ss;}
   if(!G)drawHomeIcons();});
 applyCbMarks(!!SAVE.cbMarks);layout();renderHome();renderBoosters();renderWallet();requestAnimationFrame(loop);
 document.documentElement.dataset.boot='ok';
