@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#2b8cff" />
-<title>堆堆消 Pile Rush v0.5.0</title>
+<title>堆堆消 Pile Rush v0.5.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" />
@@ -26,7 +26,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #cv{z-index:1}
 #fx{z-index:3;pointer-events:none}
 #hud{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;pointer-events:none;
-  padding:calc(var(--safe-t) + 6px) 10px calc(var(--safe-b) + 8px);max-width:560px;margin:0 auto}
+  padding:calc(var(--safe-t) + 6px) 10px calc(var(--safe-b) + 8px);max-width:1100px;margin:0 auto}
 #hud button,#hud .tap{pointer-events:auto}
 button{font-family:inherit;cursor:pointer}
 .top{display:flex;align-items:center;justify-content:space-between;height:52px}
@@ -65,7 +65,7 @@ button{font-family:inherit;cursor:pointer}
 #goals{display:flex;flex:1;width:100%;justify-content:space-around;align-items:center}
 .goal{display:flex;flex-direction:column;align-items:center;position:relative;flex:1;min-width:0}
 .goal+.goal::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:2px;background:#ffffff40}
-.goal img{width:32px;height:32px;object-fit:contain;transition:transform .15s}
+.goal img{width:46px;height:46px;object-fit:contain;transition:transform .15s}
 .goal span{font-family:var(--font-display);font-weight:700;font-size:14px;line-height:1;-webkit-text-stroke:3px var(--navy);paint-order:stroke fill;font-variant-numeric:tabular-nums}
 .goal.bump img{transform:scale(1.3)}
 .goal.done span{color:#7dffa6}
@@ -94,7 +94,7 @@ button{font-family:inherit;cursor:pointer}
 #keyPill.got{border-color:var(--gold)}
 #keyPill.none img{opacity:.35;filter:grayscale(1)}
 #trayArea{height:74px;flex:none}
-.tools.rescue{height:50px;margin:6px 0 0;gap:8px}.tools.rescue .bst{width:62px;height:46px}.tools.rescue .bst img{width:26px;height:26px}
+.tools.rescue{height:50px;flex-shrink:0;margin:6px 0 0;gap:8px}.tools.rescue .bst{width:54px;min-width:40px;flex-shrink:1;height:46px}.tools.rescue .bst img{width:26px;height:26px}
 .rlabel{font-weight:900;font-size:12px;background:#0b2a7288;border-radius:8px;padding:4px 6px;white-space:nowrap}
 .rstat{flex:1;text-align:right;font-weight:800;font-size:12px;color:#fff}
 .bst.nocarry{opacity:.45}.bst.nocarry .cnt{background:#6d7799}
@@ -201,6 +201,8 @@ html[data-boot="ok"] #boot{display:none}
       <button class="bst" data-b="wind" aria-label="大風吹"><img alt="" data-icon="wind"><em>大風吹</em><span class="cnt"></span></button>
       <button class="bst" data-b="vacuum" aria-label="吸塵器"><img alt="" data-icon="vacuum"><em>吸塵器</em><span class="cnt"></span></button>
       <button class="bst" data-b="compress" aria-label="壓縮"><img alt="" data-icon="compress"><em>壓縮</em><span class="cnt"></span></button>
+      <button class="bst" data-b="freeze" aria-label="凍結20秒"><img alt="" data-icon="freeze"><em>凍結</em><span class="cnt"></span></button>
+      <button class="bst" data-b="clear" aria-label="清倉器"><img alt="" data-icon="clear"><em>清倉</em><span class="cnt"></span></button>
       <span class="rstat" id="rescueStat"></span>
     </div>
   </div>
@@ -208,7 +210,7 @@ html[data-boot="ok"] #boot{display:none}
   <div id="plus"><img alt="" data-icon="time"><span id="plusTxt">+10s</span></div>
 
   <div class="screen on" id="home">
-    <div class="logo"><div class="t"><span class="p">Pile</span> <span class="r">Rush</span></div><small>堆 堆 消 · v0.5.0</small></div>
+    <div class="logo"><div class="t"><span class="p">Pile</span> <span class="r">Rush</span></div><small>堆 堆 消 · v0.5.1</small></div>
     <canvas id="homeIcons" style="position:relative"></canvas>
     <div class="lvcard" id="homeLv">LEVEL 1</div>
     <div class="homewallet">
@@ -237,8 +239,8 @@ const CFG={
   TRAY:7,
   KEY_REWARD:30,            // credits per golden key (first find per level only)
   START_CREDITS:40,
-  START_BOOSTERS:{time:1,bomb:1,bolt:1,wind:1,vacuum:1,compress:1},
-  PRICE:{time:30,bomb:45,bolt:90,wind:40,vacuum:60,compress:50},
+  START_BOOSTERS:{time:1,bomb:1,bolt:1,wind:1,vacuum:1,compress:1,freeze:1,clear:1},
+  PRICE:{time:30,bomb:45,bolt:90,wind:40,vacuum:60,compress:50,freeze:50,clear:40},
   RESCUE:{windShare:.35,windMin:6,vacuumTriples:2,compressSec:10,compressK:.72,compressMinPx:40,windCandidates:4,windAttempts:3,compressAnim:.3},
   FLY:{dur:.42,arc:52,settle:.12,reducedDur:.18},
   TIME_BONUS:10,            // seconds added by the time booster
@@ -256,7 +258,7 @@ const CFG={
   HINT:{firstAfter:8,every:12,duration:2.4}, // idle hint: first after N s without a valid action, then every N s, each lasting N s
   LOOK:{rotSpread:1.8,sizeMin:.78,sizeSpan:.44,mirror:.35}, // pile variety: rotation range (rad), size range, share of mirrored pieces           // master volume (0–1); every effect is routed through it
   CANVAS_BUDGET:4.2e6,          // max device pixels per full-screen canvas (keeps 4 canvases within GPU memory on big hi-DPI screens)
-  LEVEL:{baseItems:93,perLevel:6,maxItems:150,baseTypes:8,typeGrowth:.6,hardEvery:5},
+  LEVEL:{baseItems:120,perLevel:6,maxItems:180,baseTypes:8,typeGrowth:.6,hardEvery:5},
   // time = (base + goalItems·perGoalItem + types·perType + layers·perLayer + items·perItem) × (HARD ? hardFactor : 1)
   TIME:{base:10,perGoalItem:3.4,perType:1.0,perLayer:2,perItem:.05,hardFactor:.9,min:40,max:240,round:5,itemsPerLayer:32,perMoveFloor:2.2,teachBonus:[20,10]}, // v0.4: limit ≥ verified solution moves × 2.2 s
   MOTION:{dynamicCount:32,idleHzSlow:20,fastFrameMs:22,idleAmp:1.8,idleRot:.04,idleSpeed:1.25,settleRadius:1.3,settlePull:.2,settleMax:14,settleRot:.14,settleRate:7},
@@ -277,7 +279,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); // needed while loading saves
    Key 'pileRush.v4'. Older keys 'pileRush.v3' / 'pileRush.v2' are only READ (never changed or deleted).
    Every write bumps SAVE.rev; a tab whose rev is older than the stored one stops writing (no silent overwrite). */
 const KEY='pileRush.v5',LEGACY_KEYS=['pileRush.v4','pileRush.v3','pileRush.v2'],SCHEMA=5; // v5 adds rescue items, carry choices, seen-tips, reduced motion
-const APP_VERSION='0.5.0'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
+const APP_VERSION='0.5.1'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
 function defSave(){return{schema:SCHEMA,app:APP_VERSION,rev:0,createdAt:Date.now(),updatedAt:0,
   level:1,unlocked:1,credits:CFG.START_CREDITS,boosters:{...CFG.START_BOOSTERS},keys:{},cleared:{},stars:{},best:{},xp:0,score:0,runs:[],
   sound:true,haptic:true,visualFx:true,cbMarks:false,reducedMotion:null,carry:{},seen:{},txn:0,migratedFrom:null};}
@@ -291,7 +293,7 @@ function normalizeSave(o){ // tolerant reader: fills gaps, clamps ranges, never 
   S.credits=num(o.credits,d.credits,0,1e9);S.xp=num(o.xp,0,0,1e12);
   S.boosters={...d.boosters};if(isObj(o.boosters))for(const k of Object.keys(d.boosters)){const v=o.boosters[k];
     // new v5 items: missing / null / wrong type / negative / non-integer → safe default; existing items keep the clamped value
-    if(['wind','vacuum','compress'].includes(k))S.boosters[k]=(typeof v==='number'&&Number.isInteger(v)&&v>=0&&v<=1e6)?v:d.boosters[k];
+    if(['wind','vacuum','compress','freeze','clear'].includes(k))S.boosters[k]=(typeof v==='number'&&Number.isInteger(v)&&v>=0&&v<=1e6)?v:d.boosters[k];
     else S.boosters[k]=num(v,d.boosters[k],0,1e6)|0;}
   S.carry={};if(isObj(o.carry))for(const k of Object.keys(d.boosters)){const v=o.carry[k];if(typeof v==='number'&&Number.isInteger(v)&&v>=0)S.carry[k]=Math.min(v,99);}
   S.seen={};if(isObj(o.seen))for(const k of Object.keys(o.seen))if(o.seen[k]===true)S.seen[k]=true;
@@ -412,7 +414,7 @@ const TOYS=[
   {id:'rbrick_b',shape:'roundbrick',color:'blue',name:'藍色圓積木'},
   {id:'slope_y',shape:'slope',color:'yellow',name:'黃色斜坡積木'},
   {id:'slope_g',shape:'slope',color:'green',name:'綠色斜坡積木'},
-  // v0.5.0: vehicles, instruments, buildings and more dinosaurs (colour + shape still the only match rule)
+  // v0.5.1: vehicles, instruments, buildings and more dinosaurs (colour + shape still the only match rule)
   {id:'moto_r',shape:'moto',color:'red',name:'紅色機車'},
   {id:'moto_b',shape:'moto',color:'blue',name:'藍色機車'},
   {id:'violin_br',shape:'violin',color:'brown',name:'棕色小提琴'},
@@ -858,6 +860,8 @@ function drawHourglass(g,type){ // rounded-square badge (gold round tokens = att
 const PICK_SPR={rocket:makeSprite(g=>drawPickup(g,'rocket')),bomb:makeSprite(g=>drawPickup(g,'bomb')),bolt:makeSprite(g=>drawPickup(g,'bolt')),
   hg_plus:makeSprite(g=>drawHourglass(g,'hg_plus')),hg_minus:makeSprite(g=>drawHourglass(g,'hg_minus')),hg_slow:makeSprite(g=>drawHourglass(g,'hg_slow')),hg_fast:makeSprite(g=>drawHourglass(g,'hg_fast')),hg_stop:makeSprite(g=>drawHourglass(g,'hg_stop')),missile:makeSprite(g=>drawPickup(g,'missile'))};
 const isHG=it=>it&&it.kind==='pickup'&&/^hg_/.test(it.ptype||'');
+ICON.freeze=makeSprite(g=>{shade(g,g=>g.arc(0,0,40,0,TAU),'#67d9ff',0,0,40);g.fillStyle='#fff';g.font='bold 54px sans-serif';g.textAlign='center';g.fillText('❄',0,18);});
+ICON.clear=makeSprite(g=>{shade(g,g=>rrp(g,-38,-32,76,64,12),'#ffb645',0,0,40);g.fillStyle='#fff';g.font='bold 54px sans-serif';g.textAlign='center';g.fillText('↥',0,18);});
 document.querySelectorAll('img[data-icon]').forEach(im=>{im.src=ICON[im.dataset.icon].url;});
 
 /* ---------- audio & haptics ---------- */
@@ -920,8 +924,8 @@ const sfx={
 /* ---------- level generation ---------- */
 function siblings(i){const t=TOYS[i];return TOYS.filter(o=>o.idx!==i&&(o.shape===t.shape||o.color===t.color)).map(o=>o.idx);}
 /* 1,000 levels. Deterministic per level: seed = base(L) + variant·100003, where VARIANTS[L] is the first variant
-   the engine-driven solver proved solvable without boosters/pickups (tests replay every solution). */
-const SOLVE_MOVES='00600c00900900c01801b00c00c01200f01200c01501201500c04800c00901200f01b01501500c00f01501801201200f00f01201501b00f01501800f00f01500f00f00c00f00f00901201201200f00901200c01201200f01200f01401201501b02102100f01501500f01e01b01801200c01501b01202801801801e01501801201501b02101501e01800f02101e01801e01800f00f00f01801e00f01801501501501b01b01e01e01500f01500f01e01801801501501801501e01501b01201e01502102100f00f01b01e01801e01501500f01501800f01b02401b01e00f01b01201801501201b02101500f01b01b01e00f01b01800f02400f01e00f01e03900f01e01801b01b01801801501b01501b02101801800f00f00f01b01500f01801501b01500f00f01201201b01b01801202100f01801e01501b03002b01b02703001b01b01b01b01802401e01b01501e02100f02101b01207206c01b01201e00f01200f00f01801801b00f01b02401201800f01e01b06f00f01201202100f03302a01200f01b00f01201201201e01800f01500f01b01501501e03c03f01500f01200c01800f01800f03c01b00f00f01501801e01203600c00f01501b01801b00f00f01201802101b01b00f01502701800f00f01e00f01e01800f02101201501500f01502101b01201b01e01502101b02101204201201201b02d01801201501b01b01e00f02101201501b01b01501805402400f01501500f01e01201b00f02701e01501b02701801801b01801b01205d01801501800f01801801502701e01b01e01201b00f00f02101501801801201b01b01801201801b01500c02101e01b01e01803601501201800f01e03301b04801801801b02100f01803601201b00f01201e00f02101501200f02101801801b02101801b01801501801b01202401801201801501e01501b00f00f03901201e01501b01801501201202100f01201501e01801200f02a00f01b01801801e03f02401801e00f00f01800f01e01b01b01b01801e02100f00f01802101b02101b01501e01b01201b01801801b01501b01b01800f00f01b00f01807201b01801501500f06001201204801e01e01801b01e01501201800c02401e02100c01802401e02102d01b01e01501b02401801801201b01b02401203001800f02d01801800f01801801e02401b01801b01b01501500c01b00f01b01501201201e00f01b01201b01e03901b01500f01e01201501b01201b01801b01b01802101b02401501e01801501800f01501e01b02101800f00f03901e00f01801b01e01500f02103901b02701e01e00f01b01801b01801e01b01501500f00f01e01e00f00f01801800f01801801801201800f01e00f02106000f01b01800f01b01501500f01b03000f01502d01502401802401502101801200f01b03f01b03602101502400f01802100f01500f00c00f01b00f01801b01b01201804b03900f01801e01b00f01b01e00f01801201501800f01201500c01201800c01b00f01201200f02101500f01201201501501800c01202401200f02100f01b01502101b00f02400f01801501201b05401501502d07201501e00f00f01b01b00f01800f00f03000f02102100f01503000f01801201e00c03501b01e01501201e02a01801501501e01e01501801e03601800f01b01501e01801501b00f01b01e01801b02100f01801b01b01201e01801b01b01802101501501b01801500f01801201e01503601500f01b01e01500f00f01b01e03601e01201802100f01b01501b00f01b01200f01b01e00f03801801b01e02401e01b02a01b02d00f01b01500f01e01201501b01b02101501500c01801501501b01803c01801204801501801201801e02100f04302101b01201b00c01801e02101201e01e00f01801e01501e00f01501b01b01e01501e00f05101b01200f00f01b01b01204201801500f01501b01201501501803302a01201203c01e00f00f03301200f01b03901b00f01200f01501802701b01501e01501201800f00f02d01801e01801201b01b01801501801806300f01b02101201801e01501801501501b00f01801b01801e02101e01501b012018'; // verified solution length per level (3 hex digits each) → time limit floor
+   the old v0.5.0 solver selected. v0.5.1 expands layout/counts: old solutions are NOT a solvability certificate; full replay pending. */
+const SOLVE_MOVES='00600c00900900c01801b00c00c01200f01200c01501201500c04800c00901200f01b01501500c00f01501801201200f00f01201501b00f01501800f00f01500f00f00c00f00f00901201201200f00901200c01201200f01200f01401201501b02102100f01501500f01e01b01801200c01501b01202801801801e01501801201501b02101501e01800f02101e01801e01800f00f00f01801e00f01801501501501b01b01e01e01500f01500f01e01801801501501801501e01501b01201e01502102100f00f01b01e01801e01501500f01501800f01b02401b01e00f01b01201801501201b02101500f01b01b01e00f01b01800f02400f01e00f01e03900f01e01801b01b01801801501b01501b02101801800f00f00f01b01500f01801501b01500f00f01201201b01b01801202100f01801e01501b03002b01b02703001b01b01b01b01802401e01b01501e02100f02101b01207206c01b01201e00f01200f00f01801801b00f01b02401201800f01e01b06f00f01201202100f03302a01200f01b00f01201201201e01800f01500f01b01501501e03c03f01500f01200c01800f01800f03c01b00f00f01501801e01203600c00f01501b01801b00f00f01201802101b01b00f01502701800f00f01e00f01e01800f02101201501500f01502101b01201b01e01502101b02101204201201201b02d01801201501b01b01e00f02101201501b01b01501805402400f01501500f01e01201b00f02701e01501b02701801801b01801b01205d01801501800f01801801502701e01b01e01201b00f00f02101501801801201b01b01801201801b01500c02101e01b01e01803601501201800f01e03301b04801801801b02100f01803601201b00f01201e00f02101501200f02101801801b02101801b01801501801b01202401801201801501e01501b00f00f03901201e01501b01801501201202100f01201501e01801200f02a00f01b01801801e03f02401801e00f00f01800f01e01b01b01b01801e02100f00f01802101b02101b01501e01b01201b01801801b01501b01b01800f00f01b00f01807201b01801501500f06001201204801e01e01801b01e01501201800c02401e02100c01802401e02102d01b01e01501b02401801801201b01b02401203001800f02d01801800f01801801e02401b01801b01b01501500c01b00f01b01501201201e00f01b01201b01e03901b01500f01e01201501b01201b01801b01b01802101b02401501e01801501800f01501e01b02101800f00f03901e00f01801b01e01500f02103901b02701e01e00f01b01801b01801e01b01501500f00f01e01e00f00f01801800f01801801801201800f01e00f02106000f01b01800f01b01501500f01b03000f01502d01502401802401502101801200f01b03f01b03602101502400f01802100f01500f00c00f01b00f01801b01b01201804b03900f01801e01b00f01b01e00f01801201501800f01201500c01201800c01b00f01201200f02101500f01201201501501800c01202401200f02100f01b01502101b00f02400f01801501201b05401501502d07201501e00f00f01b01b00f01800f00f03000f02102100f01503000f01801201e00c03501b01e01501201e02a01801501501e01e01501801e03601800f01b01501e01801501b00f01b01e01801b02100f01801b01b01201e01801b01b01802101501501b01801500f01801201e01503601500f01b01e01500f00f01b01e03601e01201802100f01b01501b00f01b01200f01b01e00f03801801b01e02401e01b02a01b02d00f01b01500f01e01201501b01b02101501500c01801501501b01803c01801204801501801201801e02100f04302101b01201b00c01801e02101201e01e00f01801e01501e00f01501b01b01e01501e00f05101b01200f00f01b01b01204201801500f01501b01201501501803302a01201203c01e00f00f03301200f01b03901b00f01200f01501802701b01501e01501201800f00f02d01801e01801201b01b01801501801806300f01b02101201801e01501801501501b00f01801b01801e02101e01501b012018'; // historical v0.5.0 solution length, NOT verified for v0.5.1; retained rollback data per level (3 hex digits each) → time limit floor
 const VARIANTS='0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'; // tools/build-variants.cjs: one base-36 digit per level (index L-1)
 const THEMES={toybox:['duck','bear','car','brick','rocket','rings','icecream','ball','cup','dice','star']}; // levels 1–10 (unchanged teaching set)
 const SERIES={toys:['duck','bear','ball','cup','dice','star','icecream','rings'],vehicles:['car','rocket','moto'],music:['violin','trumpet','drum'],
@@ -939,14 +943,14 @@ function levelPlan(L){ // difficulty curve: ramps over 1–200, then a bounded p
     else if(x<.75){comp='mixed';const n=2+Math.floor(r()*2);series=shuffle(k.slice(),r).slice(0,n);}
     else comp='all';
     const y=r();color=y<.18?'warm':y<.36?'cool':'mixed';}
-  let types=Math.round(8+6*t+(late?Math.floor(r()*3):0));let items=93+Math.round(42*t)+(late?Math.round((r()-.5)*12):0);
+  let types=Math.round(8+6*t+(late?Math.floor(r()*3):0));let items=120+Math.round(42*t)+(late?Math.round((r()-.5)*12):0);
   if(scen==='deep')items+=12;if(scen==='lookalike')types+=1;
-  return{scen,comp,series,color,theme:comp==='toybox'?'toybox':comp==='all'?'mixed':series.join('+'),types:clamp(types,8,18),items:clamp(Math.round(items/3)*3,90,156),goals:L<3?2:L<9?3:scen==='wide'?5:(L<60?3:4)};}
+  return{scen,comp,series,color,theme:comp==='toybox'?'toybox':comp==='all'?'mixed':series.join('+'),types:clamp(types,8,18),items:clamp(Math.round(items/3)*3,120,183),goals:L<3?2:L<9?3:scen==='wide'?5:(L<60?3:4)};}
 function genLevel(L,variant){
   L=clamp(L|0,1,CFG.MAX_LEVEL);
   const C=CFG.LEVEL,hard=L%C.hardEvery===0,v=variant!=null?variant:parseInt(VARIANTS[L-1]||'0',36)||0;
   const seed=L*7919+13+v*100003,r=rngOf(seed),plan=levelPlan(L);
-  let N=plan.items+(hard?6:0);N=Math.min(156,Math.round(N/3)*3);
+  let N=plan.items+(hard?6:0);N=Math.min(189,Math.round(N/3)*3);
   let nTypes=Math.min(TOYS.length,plan.types+(hard?1:0));
   const shapes=plan.comp==='toybox'?THEMES.toybox:plan.comp==='all'?null:plan.series.flatMap(k=>SERIES[k]);
   let pool=TOYS.filter(t=>!shapes||shapes.includes(t.shape)).map(t=>t.idx);
@@ -971,8 +975,8 @@ function genLevel(L,variant){
   const needSum=gl.reduce((s,g)=>s+g.need,0);
   const T=CFG.TIME,layers=clamp(Math.round(sum/T.itemsPerLayer),2,5);
   const raw=(T.base+needSum*T.perGoalItem+Object.keys(counts).length*T.perType+layers*T.perLayer+sum*T.perItem)*(hard?T.hardFactor:1);
-  const mv=parseInt(SOLVE_MOVES.substr((L-1)*3,3),16)||0,floor=v===(parseInt(VARIANTS[L-1]||'0',36)||0)?Math.ceil(mv*T.perMoveFloor/T.round)*T.round:0;
-  const teach=L<=10?T.teachBonus[0]:L<=20?T.teachBonus[1]:0; // v0.5.0: extra time while players learn the new rescue bar / prep flow
+  const mv=0,floor=0;
+  const teach=L<=10?T.teachBonus[0]:L<=20?T.teachBonus[1]:0; // v0.5.1: extra time while players learn the new rescue bar / prep flow
   const time=clamp(Math.max(Math.round(raw/T.round)*T.round,floor)+teach,T.min,T.max);
   return{L,hard,counts,goals:gl,time,seed,variant:v,keyId:'L'+L,key:CFG.KEY_REWARD>0,
     meta:{items:sum,types:Object.keys(counts).length,layers,goalItems:needSum,raw:+raw.toFixed(1),scen:plan.scen,theme:plan.theme,comp:plan.comp,series:plan.series,color:colorUsed,solveMoves:mv,floor}};
@@ -990,9 +994,7 @@ function layout(){
   for(const c of [cv,fx,PC,DC]){c.width=Math.floor(W*DPR);c.height=Math.floor(H*DPR);}
   if(G)G.pileDirty=G.dynDirty=true;
   const p=$('pileArea').getBoundingClientRect(),t=$('trayArea').getBoundingClientRect();
-  { // fit the fixed-aspect logical pile (PILE_REF) inside the available area → identical layout/occlusion on every screen
-    const R=CFG.PILE_REF,ar=R.w/R.h;let w=p.width,h=p.height;if(w/h>ar)w=h*ar;else h=w/ar;
-    PILE={x:p.left+(p.width-w)/2,y:p.top+(p.height-h)/2,w,h};HITBOX={x:p.left,y:p.top,w:p.width,h:p.height};}TRAY={x:t.left,y:t.top,w:t.width,h:t.height};
+  { PILE={x:p.left,y:p.top,w:p.width,h:p.height};HITBOX={...PILE};}TRAY={x:t.left,y:t.top,w:t.width,h:t.height};
   SLOTG=Math.max(4,TRAY.w*.012);SLOT=(TRAY.w-20-SLOTG*(CFG.TRAY-1))/CFG.TRAY;
 }
 const slotPos=i=>({x:TRAY.x+10+SLOT/2+i*(SLOT+SLOTG),y:TRAY.y+TRAY.h/2});
@@ -1033,7 +1035,7 @@ function newGame(L,ov,loadout){
     ov.items.forEach(o=>{if(o.kind==='key'&&SAVE.keys[lv.keyId])return;const m=mkItem(o.tid,PILE.x+o.x*PILE.w,PILE.y+o.y*PILE.h,o.z,o.rot||0,S*(o.size||1),o.kind,o.ptype);m.flip=!!o.flip;G.items.push(m);});
   }else{
     const list=[];Object.entries(lv.counts).forEach(([tid,n])=>{for(let i=0;i<n;i++)list.push({tid:+tid});});
-    const REAL=PILE;PILE={x:0,y:0,w:CFG.PILE_REF.w,h:CFG.PILE_REF.h}; // generate in logical units, map afterwards
+    const REAL=PILE;PILE={x:0,y:0,w:REAL.w,h:REAL.h}; // v0.5.1 generate at actual viewport aspect; no narrow fixed-aspect panel
     shuffle(list,r);placeItems(list,r);
     list.forEach(o=>{const m=mkItem(o.tid,o.x,o.y,o.z,o.rot,o.size);m.flip=!!o.flip;G.items.push(m);});
     const keyFree=lv.key&&!SAVE.keys[lv.keyId];
@@ -1051,7 +1053,7 @@ function newGame(L,ov,loadout){
       const toyTids=Object.keys(lv.counts).map(Number),dis=toyTids[Math.floor(tr()*toyTids.length)],sz=S*.8;let best=null,bs=1e9;
       for(let c=0;c<24;c++){const x=PILE.w*(.15+tr()*.7),y=PILE.h*(.15+tr()*.7);const n=G.items.filter(i=>(i.x-x)**2+(i.y-y)**2<(sz*.7)**2).length;if(n<bs){bs=n;best={x,y};}}
       const mz=Math.max(...G.items.map(i=>i.z));const t=mkItem(-2,best.x,best.y,mz+.5,(tr()-.5)*.6,sz,'pickup',kind);t.trap=true;t.disguise=dis;G.items.push(t);G.trapCount=1;}}
-    const k=REAL.w/CFG.PILE_REF.w;for(const it of G.items){it.x=REAL.x+it.x*k;it.y=REAL.y+it.y*k;it.size*=k;}S*=k;PILE=REAL;
+    for(const it of G.items){it.x+=REAL.x;it.y+=REAL.y;}PILE=REAL;
   }
   G.sorted=[...G.items].sort((a,b)=>a.z-b.z);
   renderGoals();renderBoosters();renderWallet();cancelTarget(true);
@@ -1090,7 +1092,7 @@ function pickAt(x,y){
 /* Press-and-hold selection: pointerdown locks the topmost visible piece and outlines it; pointerup on that same piece
    confirms. Moving off it, pointercancel, blur/visibility change, a second finger, or a modal/effect cancels safely. */
 const HOLD={id:null,it:null,pointers:new Set(),blocked:false,stat:{began:0,confirmed:0,canceled:0,reasons:{}}};
-function holdOK(){return G&&G.state==='play'&&!G.endKind&&!G.action;}
+function holdOK(){return G&&G.state==='play'&&!G.endKind&&!G.action&&!G.wind;}
 function overHeld(it,x,y){const T=CFG.HOLD.tolerance;if(maskHit(it,x,y))return true;for(let a=0;a<8;a++)if(maskHit(it,x+Math.cos(a*TAU/8)*T,y+Math.sin(a*TAU/8)*T))return true;return false;}
 function releaseHeld(){if(HOLD.it){HOLD.it.held=false;}HOLD.it=null;HOLD.id=null;HOLD.meteor=null;}
 function cancelHold(reason){if(!HOLD.it&&HOLD.id==null&&!HOLD.meteor)return;if(HOLD.it||HOLD.meteor){HOLD.stat.canceled++;HOLD.stat.reasons[reason]=(HOLD.stat.reasons[reason]||0)+1;}releaseHeld();}
@@ -1128,7 +1130,7 @@ function confirmPick(it){
   if(G.tray.length>=CFG.TRAY){sfx.miss();shakeTray();toast('收集槽已滿');return;}
   pick(it);
 }
-function pick(it){
+function pick(it){if(G&&G.wind)return;
   settleAround(it);it.x+=it.jx;it.y+=it.jy;it.rot+=it.jr;it.jx=it.jy=it.jr=0;
   it.fs=esz(it);it.state='fly';it.t=0;it.fx=it.x;it.fy=it.y;it.frot=it.rot;
   let idx=-1;for(let i=G.tray.length-1;i>=0;i--)if(G.tray[i].tid===it.tid){idx=i;break;}
@@ -1182,12 +1184,12 @@ function spendFail(){toast(SPEND_ERR||'道具未使用');renderBoosters();}
 function useBooster(k){noteActivity();
   const now=performance.now();if(now-(lastUse[k]||0)<CFG.BOOSTER_COOLDOWN_MS)return;lastUse[k]=now;
   if(!G||G.state!=='play'||G.endKind)return;
-  if(G.action){toast('效果進行中…');return;}
+  if(G.action||G.wind){toast('效果進行中…');return;}
   if(G.target===k){cancelTarget();return;}
   if(G.loadout&&(G.loadout[k]|0)<=0){toast(`本關未帶入「${NAMES[k]}」（可在關前準備帶入）`);return;}
   if((SAVE.boosters[k]|0)<=0){openShop(k);return;}
   if(k==='time'){if(!spend('time')){spendFail();return;}addTime();renderBoosters();return;}
-  if(k==='wind'||k==='vacuum'||k==='compress'){const r=RESCUE_PLAN[k]();if(!r.ok){toast(r.msg);return;}if(!spend(k)){spendFail();return;}r.apply();renderBoosters();return;} // plan → commit → apply
+  if(k in RESCUE_PLAN){const r=RESCUE_PLAN[k]();if(!r.ok){toast(r.msg);return;}if(!spend(k)){spendFail();return;}r.apply();renderBoosters();return;} // plan → commit → apply
   setTarget(k);
 }
 function addTime(sec=CFG.TIME_BONUS){G.time+=sec;G.total=Math.max(G.total,G.time);G.bonusT=1.2;sfx.time();showDelta(sec);}
@@ -1197,9 +1199,9 @@ function showDelta(sec){
 function setTarget(k){G.target=k;$('targetTxt').textContent=k==='bomb'?'點選要炸開的玩具':'點選閃電大炸彈的中心';$('targetBar').hidden=false;renderBoosters();}
 function cancelTarget(silent){if(G)G.target=null;$('targetBar').hidden=true;renderBoosters();}
 $('targetCancel').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();cancelTarget();});
-const NAMES={time:'延時 +'+CFG.TIME_BONUS+'s',bomb:'小炸彈',bolt:'閃電大炸彈',wind:'大風吹',vacuum:'吸塵器',compress:'壓縮'};
-const DESC={time:'倒數立即增加 '+CFG.TIME_BONUS+' 秒。',bomb:'選一個玩具，原地炸開並清除它與另外 2 個同款（共 3 個），計入目標。',bolt:'選一個中心，閃電連鎖清除附近 '+CFG.BOLT_TRIPLES+' 種玩具各 3 個（範圍明顯大於小炸彈）。',
-  wind:'把下層約三分之一的玩具翻到上層重新散開，讓原本被壓住的玩具可以點到。',vacuum:'吸走最多 '+CFG.RESCUE.vacuumTriples+' 組（每組 3 個）不在目標、也不在收集槽的同款障礙物。',compress:'玩具暫時縮小 '+CFG.RESCUE.compressSec+' 秒，減少互相遮擋；收集槽仍是 7 格。'};
+const NAMES={time:'延時 +'+CFG.TIME_BONUS+'s',bomb:'小炸彈',bolt:'閃電大炸彈',wind:'大風吹',vacuum:'吸塵器',compress:'壓縮',freeze:'凍結 20 秒',clear:'清倉器'};
+const DESC={freeze:'倒數凍結 20 秒，仍可正常消除。',clear:'隨機退回收集槽一個玩具，不改變目標或牌的總數。',time:'倒數立即增加 '+CFG.TIME_BONUS+' 秒。',bomb:'選一個玩具，原地炸開並清除它與另外 2 個同款（共 3 個），計入目標。',bolt:'選一個中心，閃電連鎖清除附近 '+CFG.BOLT_TRIPLES+' 種玩具各 3 個（範圍明顯大於小炸彈）。',
+  wind:'整堆玩具大範圍漩渦旋轉後重新落定，保留牌數與遮擋關係。',vacuum:'收集槽每一塊各搭配畫面兩塊同款消一組，實際消除計入目標；不足一組者保留。',compress:'玩具暫時縮小 '+CFG.RESCUE.compressSec+' 秒，減少互相遮擋；收集槽仍是 7 格。'};
 let LAST_BUY_ERR='';
 function buyBooster(k){ // transaction: check → apply → persist; if the write fails, roll back completely and report
   LAST_BUY_ERR='';const price=CFG.PRICE[k];
@@ -1360,41 +1362,30 @@ function verifyLayout(lay,attempts,seed){
   return{ok:false};}
 const RESCUE_PLAN={ // each plan only inspects; nothing changes until apply() runs after the stock is committed
   wind(){
-    if(G.action)return{ok:false,msg:'效果進行中，稍後再用'};
-    const pile=G.items.filter(i=>i.state==='pile'&&i.kind==='toy');if(pile.length<CFG.RESCUE.windMin)return{ok:false,msg:'剩下的玩具太少，不需要大風吹（未消耗）'};
-    const before=pile.filter(isSelectable).map(i=>i.uid);
-    const byZ=pile.slice().sort((a,b)=>a.z-b.z),K=Math.max(3,Math.round(pile.length*CFG.RESCUE.windShare));
-    const need=[...new Set([...G.tray.map(i=>i.tid),...G.goals.filter(g=>g.got<g.need).map(g=>g.tid)])],must=[];
-    for(const t of need){if(!pile.some(i=>i.tid===t&&before.includes(i.uid))){const c=byZ.find(i=>i.tid===t&&!must.includes(i));if(c)must.push(c);}}
-    const lift=[...byZ.filter(i=>!must.includes(i)&&!before.includes(i.uid)).slice(0,Math.max(0,K-must.length)),...must]; // needed pieces end up on top
-    if(!lift.length)return{ok:false,msg:'沒有被壓住的玩具（未消耗）'};
-    // propose layouts and keep the first one whose step-by-step playout reaches a win; otherwise refuse (nothing changes, nothing spent)
-    const z0=Math.max(...G.items.filter(i=>i.state==='pile').map(i=>i.z))+.01,W=CFG.RESCUE;let plan=null,tries=0;const t0=performance.now();
-    for(let c=0;c<W.windCandidates&&!plan;c++){const rr=rngOf(((G.lv.seed^0x5bd1)>>>0)+(G.windN||0)*977+c*7919);let z=z0;const lay=new Map();
-      for(const it of lift){const m=it.size*.45;lay.set(it,{z,tx:PILE.x+m+rr()*(PILE.w-2*m),ty:PILE.y+m+rr()*(PILE.h-2*m),trot:(rr()-.5)*CFG.LOOK.rotSpread});z+=.002;}
-      tries++;const v=verifyLayout(lay,W.windAttempts,((G.lv.seed>>>0)+c*31)>>>0);if(v.ok)plan={lay,cand:c,steps:v.steps};}
-    const ms=performance.now()-t0;
-    if(!plan){G.lastWindCheck={ok:false,tries,ms};return{ok:false,msg:'這次重排無法確認仍能過關，大風吹未使用、未扣庫存'};}
-    return{ok:true,check:{cand:plan.cand,steps:plan.steps,tries,ms},apply(){
-    for(const [it,L] of plan.lay){it.z=L.z;it.tx=L.tx;it.ty=L.ty;it.trot=L.trot;it.jx=it.jy=it.jr=0;}
-    G.lastWindCheck={ok:true,cand:plan.cand,steps:plan.steps,tries,ms};
-    G.windN=(G.windN||0)+1;G.sorted=[...G.items].sort((a,b)=>a.z-b.z);G.shadeDirty=G.pileDirty=G.dynDirty=true;
-    G.lastRescue={k:'wind',lifted:lift.map(i=>i.uid),must:must.map(i=>i.uid),before};
-    sfx.rocket();G.shake=4;for(let i=0;i<5;i++)ring(PILE.x+PILE.w/2,PILE.y+PILE.h/2,S*(1+i*.6),'#bfefff',.5+i*.08,6);}};},
+    if(G.action||G.wind)return{ok:false,msg:'效果進行中（未消耗）'};
+    const pile=G.items.filter(i=>i.state==='pile');
+    if(pile.length<2)return{ok:false,msg:'玩具太少（未消耗）'};
+    return{ok:true,apply(){cancelHold('wind');G.wind={t:0,dur:reducedMotion()?.35:2.4,poses:pile.map(it=>({it,x:it.x,y:it.y,rot:it.rot}))};
+      G.lastRescue={k:'wind',lifted:pile.map(i=>i.uid)};sfx.rocket();}};
+  },
   vacuum(){
-    if(G.action)return{ok:false,msg:'效果進行中，稍後再用'};
-    const inTray=new Set(G.tray.map(i=>i.tid)),openGoal=new Set(G.goals.filter(g=>g.got<g.need).map(g=>g.tid));
-    const by={};for(const it of G.items)if(it.state==='pile'&&it.kind==='toy')(by[it.tid]=by[it.tid]||[]).push(it);
-    const pileAll=G.items.filter(i=>i.state==='pile');
-    const cover=it=>pileAll.filter(o=>o!==it&&o.z<it.z&&(o.x-it.x)**2+(o.y-it.y)**2<((esz(o)+esz(it))*.4)**2).length;
-    const cand=Object.keys(by).map(Number).filter(t=>!inTray.has(t)&&!openGoal.has(t)&&by[t].length>=3)
-      .map(t=>{const its=by[t].map(i=>({i,c:cover(i)})).sort((a,b)=>b.c-a.c||b.i.z-a.i.z);return{t,its:its.slice(0,3).map(o=>o.i),score:its.slice(0,3).reduce((s,o)=>s+o.c,0)};})
-      .sort((a,b)=>b.score-a.score).slice(0,CFG.RESCUE.vacuumTriples);
-    if(!cand.length)return{ok:false,msg:'沒有可安全吸走的障礙（不吸目標或收集槽同款），未消耗'};
-    return{ok:true,apply(){
-    const b=document.querySelector('.bst[data-b="vacuum"]').getBoundingClientRect();
-    G.lastRescue={k:'vacuum',removed:cand.flatMap(c=>c.its.map(i=>i.uid)),types:cand.map(c=>c.t)};
-    startAction('vacuum',PILE.x+PILE.w/2,PILE.y+PILE.h/2,cand.map(c=>c.its),b.left+b.width/2,b.top+b.height/2,{boomed:true});}};},
+    if(G.action||G.wind||G.tray.some(i=>i.state==='fly'))return{ok:false,msg:'請等圖塊落定（未消耗）'};
+    const groups=[],used=new Set(),demand={};
+    for(const held of G.tray){const t=held.tid;demand[t]=(demand[t]||0)+1;
+      const mates=G.items.filter(i=>i.kind==='toy'&&i.state==='pile'&&i.tid===t&&!used.has(i)).sort((a,b)=>b.z-a.z).slice(0,2);
+      if(mates.length===2){mates.forEach(i=>used.add(i));groups.push([held,...mates]);}}
+    if(!groups.length)return{ok:false,msg:'收集槽沒有可補成三消的圖塊（未消耗）'};
+    return{ok:true,apply(){const b=document.querySelector('.bst[data-b="vacuum"]').getBoundingClientRect();
+      G.lastRescue={k:'vacuum',demand,groupsByType:groups.reduce((o,g)=>(o[g[0].tid]=(o[g[0].tid]||0)+1,o),{}),removed:groups.flat().map(i=>i.uid)};
+      startAction('vacuum',PILE.x+PILE.w/2,PILE.y+PILE.h/2,groups,b.left+b.width/2,b.top+b.height/2,{boomed:true});}};
+  },
+  freeze(){if(G.freeze>0)return{ok:false,msg:'凍結正在進行（未消耗）'};
+    return{ok:true,apply(){G.freeze=20;sfx.slow();toast('倒數凍結 20 秒');}};},
+  clear(){if(G.action||G.wind||G.tray.some(i=>i.state==='fly'))return{ok:false,msg:'請等圖塊落定（未消耗）'};
+    if(!G.tray.length)return{ok:false,msg:'收集槽是空的（未消耗）'};
+    const it=G.tray[Math.floor(Math.random()*G.tray.length)];
+    return{ok:true,apply(){G.tray.splice(G.tray.indexOf(it),1);it.state='pile';it.x=PILE.x+PILE.w*(.2+Math.random()*.6);it.y=PILE.y+PILE.h*(.2+Math.random()*.6);it.rot=0;it.tx=it.ty=it.trot=null;it.jx=it.jy=it.jr=0;it.z=Math.max(0,...G.items.map(i=>i.z))+.01;it.spawnT=0;
+      G.sorted=[...G.items].sort((a,b)=>a.z-b.z);G.shadeDirty=G.pileDirty=G.dynDirty=true;G.lastRescue={k:'clear',returned:it.uid};sfx.pick();}};},
   compress(){
     if(G.compress)return{ok:false,msg:'壓縮已在進行中（未消耗）'};
     if(G.action)return{ok:false,msg:'效果進行中，稍後再用'};
@@ -1511,7 +1502,7 @@ function finishEnd(){
       const nxt=Math.min(CFG.MAX_LEVEL,L+1);SAVE.unlocked=Math.max(SAVE.unlocked,nxt);if(SAVE.level<=L)SAVE.level=nxt;
       rec=recordRun(L,stars);}
     SAVE.txn++;persist();renderWallet();G.lastRun=rec;
-    showModal(`<h2>過關！</h2><div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>
+    showModal(`<div style="font-size:76px;line-height:1.15" aria-label="過關獎盃">🏆</div><h2>過關！</h2><div class="stars">${[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}">⭐</span>`).join('')}</div>
       <p>剩餘時間 ${fmt(G.time)}${G.keyClaimed?'　🔑 已找到鑰匙':''}</p>${reward?`<p>首次過關 +${reward} credit</p>`:''}
       ${rec?`<p class="sub">有效遊玩 ${(rec.activeMs/1000).toFixed(1)} 秒｜本局積分 ${rec.score}${rec.best?'（新紀錄）':''}｜經驗 +${rec.xpGain}${rec.usedBoosters?'｜有使用道具':''}</p>`:''}
       ${L>=CFG.MAX_LEVEL&&!G.lv.debug?`<p><b>恭喜完成全部 ${CFG.MAX_LEVEL} 關！</b></p>`:`<button class="big" data-a="next">下一關</button>`}<div class="row"><button class="big blue" data-a="retry">重玩</button><button class="big gray" data-a="home">主畫面</button></div>`);
@@ -1533,9 +1524,9 @@ function continueWithTime(btn){
   G.endKind=null;G.state='play';resumeActive(performance.now());hideModal();G.time=0;addTime();renderBoosters();
 }
 const PREP={L:0,tok:0,used:false,started:false,log:[]};
-const WHEN={time:'遊戲中按「+10s」立即增加 10 秒倒數；時間到的失敗畫面也能用來繼續（需已帶入）。',bomb:'遊戲中按「炸彈」後按住選一個玩具、放開引爆。',bolt:'遊戲中按「閃電」後按住選中心、放開引爆。',
-  wind:'救援欄：按下立即重排堆疊。',vacuum:'救援欄：按下立即吸走障礙；沒有可安全吸走的障礙時不消耗。',compress:'救援欄：按下後 '+CFG.RESCUE.compressSec+' 秒內玩具縮小；效果中再按不消耗。'};
-const PREP_KEYS=['time','bomb','bolt','wind','vacuum','compress'];
+const WHEN={freeze:'按下凍結倒數 20 秒；暫停時效果時間也暫停，不能重複疊加。',clear:'隨機將收集槽一個已落定的玩具退回畫面最上層。',time:'遊戲中按「+10s」立即增加 10 秒倒數；時間到的失敗畫面也能用來繼續（需已帶入）。',bomb:'遊戲中按「炸彈」後按住選一個玩具、放開引爆。',bolt:'遊戲中按「閃電」後按住選中心、放開引爆。',
+  wind:'救援欄：按下立即重排堆疊。',vacuum:'收集槽每塊各帶走畫面兩塊同款，能完整成組才消除；完全不能成組不扣庫存。',compress:'救援欄：按下後 '+CFG.RESCUE.compressSec+' 秒內玩具縮小；效果中再按不消耗。'};
+const PREP_KEYS=['time','bomb','bolt','wind','vacuum','compress','freeze','clear'];
 function prepCarry(k){const own=SAVE.boosters[k]|0;return Math.max(0,Math.min(own,PREP.carry[k]??(SAVE.carry[k]|0)));}
 function openPrep(L,confirmK,msg){ // nothing is preselected for purchase; credits move only on 確認兌換; bring-in counts chosen by the player
   if(PREP.L!==L){PREP.L=L;PREP.log=[];PREP.carry={};}PREP.started=false;PREP.used=false;PREP.tok++;
@@ -1691,7 +1682,7 @@ function bumpGoal(t){const el=document.querySelector(`.goal[data-t="${t}"]`);if(
 function renderBoosters(){document.querySelectorAll('.bst').forEach(b=>{const k=b.dataset.b,own=SAVE.boosters[k]|0,c=b.querySelector('.cnt');
   const lim=G&&G.loadout?(G.loadout[k]|0):null,n=lim==null?own:Math.min(lim,own);
   c.textContent=lim!=null&&lim<=0?'—':n>0?n:CFG.PRICE[k]+'c';c.classList.toggle('buy',lim==null&&n<=0);b.classList.toggle('nocarry',lim!=null&&lim<=0);b.classList.toggle('on',!!(G&&G.target===k));});
-  const rs=document.getElementById('rescueStat');if(rs)rs.textContent=G&&G.compress?`壓縮中 ${Math.ceil(G.compress.left)}s`:'';}
+  const rs=document.getElementById('rescueStat');if(rs)rs.textContent=G&&G.freeze>0?`凍結 ${Math.ceil(G.freeze)}s`:G&&G.compress?`壓縮中 ${Math.ceil(G.compress.left)}s`:'';}
 function renderWallet(bump){$('credTxt').textContent=SAVE.credits;const kp=$('keyPill');
   if(G){const has=!!SAVE.keys[G.lv.keyId];$('keyTxt').textContent=G.keyClaimed?'找到了':has?'已領':(G.items.some(i=>i.kind==='key')?'0/1':'—');kp.classList.toggle('got',G.keyClaimed);kp.classList.toggle('none',!G.keyClaimed);}
   if(bump){const p=$('credPill');p.classList.remove('bump');void p.offsetWidth;p.classList.add('bump');}}
@@ -1722,7 +1713,7 @@ function computeShade(){
 }
 function update(dt){
   if(!G)return;
-  if(G.state==='play'&&!G.endKind){const m=G.rate?G.rate.mult:1;G.time-=dt*m;
+  if(G.state==='play'&&!G.endKind){const frozen=Math.min(dt,G.freeze||0);G.freeze=Math.max(0,(G.freeze||0)-dt);const m=G.rate?G.rate.mult:1;G.time-=(dt-frozen)*m;
     if(G.rate){G.rate.left-=dt;if(G.rate.left<=0){G.rate=null;toast('倒數速率恢復 ×1');}}
     if(G.time<=0){G.time=0;endGame('time');}if(G.comboT>0)G.comboT-=dt;}
   if(G.minusT>0)G.minusT-=dt;
@@ -1735,11 +1726,18 @@ function update(dt){
   G.clock+=dt;G.idleAcc+=dt;const M=CFG.MOTION,tc=G.clock*M.idleSpeed;let moving=false;
   const swayNow=frameEMA<M.fastFrameMs||G.idleAcc>=1/M.idleHzSlow;if(swayNow){G.idleAcc=0;G.dynDirty=true;}
   for(const it of G.sorted){if(it.state!=='pile')continue;
+    if(G.wind)continue;
     if(it.tx!=null){const k=Math.min(1,dt*M.settleRate);it.x+=(it.tx-it.x)*k;it.y+=(it.ty-it.y)*k;it.rot+=(it.trot-it.rot)*k;
       if(Math.abs(it.tx-it.x)<.25&&Math.abs(it.ty-it.y)<.25&&Math.abs(it.trot-it.rot)<.002){it.x=it.tx;it.y=it.ty;it.rot=it.trot;it.tx=it.ty=it.trot=null;}
       if(!it.dyn)moving=true;else G.dynDirty=true;}
     if(it.dyn&&swayNow&&!it.held){it.jx=M.idleAmp*Math.sin(tc*it.f1+it.p1);it.jy=M.idleAmp*Math.sin(tc*it.f2+it.p2);it.jr=M.idleRot*Math.sin(tc*.8*it.f1+it.p3);}
     if(it.spawnT!=null){it.spawnT+=dt/.35;G.dynDirty=true;if(it.spawnT>=1)it.spawnT=null;}}
+  if(G.wind){const w=G.wind;w.t+=dt;const u=Math.min(1,w.t/w.dur),cx=PILE.x+PILE.w/2,cy=PILE.y+PILE.h/2;
+    for(const p of w.poses){const it=p.it,dx=(p.x-cx)/(PILE.w/2),dy=(p.y-cy)/(PILE.h/2),a=3*Math.PI*u;
+      const rad=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)+a,scale=1-.22*Math.sin(Math.PI*u);
+      const margin=it.size*.42;it.x=clamp(cx+Math.cos(ang)*rad*scale*PILE.w/2,PILE.x+margin,PILE.x+PILE.w-margin);it.y=clamp(cy+Math.sin(ang)*rad*scale*PILE.h/2,PILE.y+margin,PILE.y+PILE.h-margin);it.rot=p.rot+a;it.jx=it.jy=it.jr=0;
+      if(u===1){it.x=2*cx-p.x;it.y=2*cy-p.y;it.rot=p.rot+Math.PI;it.tx=it.ty=it.trot=null;}}
+    G.pileDirty=G.dynDirty=G.shadeDirty=true;if(u===1)G.wind=null;}
   if(moving)G.pileDirty=true;
   const ts=traySize();
   // iterate a snapshot: matching (which splices the tray) runs once after this frame's landings — no skipped / double updates
@@ -1904,7 +1902,7 @@ document.addEventListener('visibilitychange',()=>{const now=performance.now();if
 function loop(now){const raw=now-last,dt=Math.min(.05,raw/1000);last=now;
   activeClock(performance.now());frameEMA=frameEMA*.9+Math.min(100,raw)*.1;update(dt);render(now);updateHud();requestAnimationFrame(loop);}
 addEventListener('resize',()=>{const op={...PILE},ot={...TRAY};layout();
-  if(G){const sw=PILE.w/op.w,sh=PILE.h/op.h,ss=Math.min(sw,sh);G.items.forEach(it=>{if(it.state==='pile'||it.state==='fx'){it.x=PILE.x+(it.x-op.x)*sw;it.y=PILE.y+(it.y-op.y)*sh;it.size*=ss;}});S*=ss;}
+  if(G){if(G.wind){for(const p of G.wind.poses){p.it.x=p.x;p.it.y=p.y;p.it.rot=p.rot;}G.wind=null;}const sw=PILE.w/op.w,sh=PILE.h/op.h,ss=Math.min(sw,sh);G.items.forEach(it=>{if(it.state==='pile'||it.state==='fx'){it.x=PILE.x+(it.x-op.x)*sw;it.y=PILE.y+(it.y-op.y)*sh;it.size*=ss;if(it.tx!=null){it.tx=PILE.x+(it.tx-op.x)*sw;it.ty=PILE.y+(it.ty-op.y)*sh;}}});S*=ss;}
   if(!G)drawHomeIcons();});
 applyCbMarks(!!SAVE.cbMarks);layout();renderHome();renderBoosters();renderWallet();requestAnimationFrame(loop);
 document.documentElement.dataset.boot='ok';
