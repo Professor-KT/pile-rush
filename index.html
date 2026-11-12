@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#2b8cff" />
-<title>堆堆消 Pile Rush v0.5.3</title>
+<title>堆堆消 Pile Rush v0.5.4 預覽</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" />
@@ -245,7 +245,7 @@ const CFG={
   FLY:{dur:.42,arc:52,settle:.12,reducedDur:.18},
   TIME_BONUS:10,            // seconds added by the time booster
   FIRST_CLEAR_CREDITS:10,   // credits for first clear of a level
-  BOLT_TRIPLES:4,           // lightning clears 4 types × 3 (small bomb: 1 × 3)
+  BOLT_TRIPLES:3,           // lightning chooses 2–3 complete triples; fewer only when the board has fewer eligible groups
   BOLT_RADIUS:1.8,          // × toy size, preferred search radius for lightning targets
   BOOSTER_COOLDOWN_MS:450,
   MAX_LEVEL:1000,
@@ -279,7 +279,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); // needed while loading saves
    Key 'pileRush.v4'. Older keys 'pileRush.v3' / 'pileRush.v2' are only READ (never changed or deleted).
    Every write bumps SAVE.rev; a tab whose rev is older than the stored one stops writing (no silent overwrite). */
 const KEY='pileRush.v5',LEGACY_KEYS=['pileRush.v4','pileRush.v3','pileRush.v2'],SCHEMA=5; // v5 adds rescue items, carry choices, seen-tips, reduced motion
-const APP_VERSION='0.5.3'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
+const APP_VERSION='0.5.4-preview.1'; // root save 'app' = the app that last wrote it; historic runs keep their own 'app'
 function defSave(){return{schema:SCHEMA,app:APP_VERSION,rev:0,createdAt:Date.now(),updatedAt:0,
   level:1,unlocked:1,credits:CFG.START_CREDITS,boosters:{...CFG.START_BOOSTERS},keys:{},cleared:{},stars:{},best:{},xp:0,score:0,runs:[],
   sound:true,haptic:true,visualFx:true,cbMarks:false,reducedMotion:null,carry:{},seen:{},txn:0,migratedFrom:null};}
@@ -1181,11 +1181,34 @@ function maskHit(it,x,y){ // uses exactly the pose that is drawn this frame (bas
 function inPile(x,y){ // the whole visible pile area: toy edges that overhang the fixed-aspect logical pile stay tappable where they are drawn
   const B=HITBOX.w>1?HITBOX:PILE;return x>=B.x&&x<=B.x+B.w&&y>=B.y&&y<=B.y+B.h;}
 function topAt(x,y){if(!inPile(x,y))return null;const s=G.sorted;for(let i=s.length-1;i>=0;i--){const it=s[i];if(it.state==='pile'&&maskHit(it,x,y))return it;}return null;}
+// Hollow jewellery is selected as one object, not as a window to a lower toy.
+// Pixel-accurate topAt remains unchanged for visibility/solver checks.
+function touchBodyHit(it,x,y){
+  if(maskHit(it,x,y))return true;
+  if(it.kind!=='toy')return false;
+  const shape=TOYS[it.tid].shape,sz=esz(it),dx=x-it.x-it.jx,dy=y-it.y-it.jy;
+  const c=Math.cos(it.rot+it.jr),s=Math.sin(it.rot+it.jr),k=sz/100;
+  const u=(dx*c+dy*s)/k*(it.flip?-1:1),v=(-dx*s+dy*c)/k;
+  return hollowHit(shape,u,v);
+}
+function hollowHit(shape,u,v){
+  if(shape==='hula'){const co=Math.cos(-.2),si=Math.sin(-.2),a=u*co+v*si,b=-u*si+v*co;return a*a/(46*46)+b*b/(40*40)<=1;}
+  if(shape==='ring')return u*u/(33*33)+(v-12)*(v-12)/(34*34)<=1;
+  if(shape==='necklace')return v>=-40&&v<=34&&u*u/(36*36)+(v+7)*(v+7)/(45*45)<=1;
+  return false;
+}
+function touchAt(x,y){
+  if(!inPile(x,y))return null;
+  for(let i=G.sorted.length-1;i>=0;i--){const it=G.sorted[i];if(it.state==='pile'&&touchBodyHit(it,x,y))return it;}
+  return null;
+}
 function pickAt(x,y){
-  let it=topAt(x,y);if(it)return it;
-  // small finger tolerance: only ever returns an item whose own visible pixels are within 9px
-  let best=null;for(let a=0;a<8;a++){const h=topAt(x+Math.cos(a*TAU/8)*9,y+Math.sin(a*TAU/8)*9);if(h&&(!best||h.z>best.z))best=h;}
-  return best;
+  const exact=touchAt(x,y);if(exact)return exact;
+  // Closest visible edge wins. Do not jump to a remote high-z object at the edge of the tolerance circle.
+  for(let r=3;r<=9;r+=3){let best=null;
+    for(let a=0;a<16;a++){const h=touchAt(x+Math.cos(a*TAU/16)*r,y+Math.sin(a*TAU/16)*r);if(h&&(!best||h.z>best.z))best=h;}
+    if(best)return best;
+  }return null;
 }
 
 /* ---------- input ---------- */
@@ -1193,7 +1216,7 @@ function pickAt(x,y){
    confirms. Moving off it, pointercancel, blur/visibility change, a second finger, or a modal/effect cancels safely. */
 const HOLD={id:null,it:null,pointers:new Set(),blocked:false,stat:{began:0,confirmed:0,canceled:0,reasons:{}}};
 function holdOK(){return G&&G.state==='play'&&!G.endKind&&!G.action&&!G.wind;}
-function overHeld(it,x,y){const T=CFG.HOLD.tolerance;if(maskHit(it,x,y))return true;for(let a=0;a<8;a++)if(maskHit(it,x+Math.cos(a*TAU/8)*T,y+Math.sin(a*TAU/8)*T))return true;return false;}
+function overHeld(it,x,y){const T=CFG.HOLD.tolerance;if(touchBodyHit(it,x,y))return true;for(let r=3;r<=T;r+=3)for(let a=0;a<16;a++)if(touchBodyHit(it,x+Math.cos(a*TAU/16)*r,y+Math.sin(a*TAU/16)*r))return true;for(let a=0;a<16;a++)if(touchBodyHit(it,x+Math.cos(a*TAU/16)*T,y+Math.sin(a*TAU/16)*T))return true;return false;}
 function releaseHeld(){if(HOLD.it){HOLD.it.held=false;}HOLD.it=null;HOLD.id=null;HOLD.meteor=null;}
 function cancelHold(reason){if(!HOLD.it&&HOLD.id==null&&!HOLD.meteor)return;if(HOLD.it||HOLD.meteor){HOLD.stat.canceled++;HOLD.stat.reasons[reason]=(HOLD.stat.reasons[reason]||0)+1;}releaseHeld();}
 cv.addEventListener('pointerdown',e=>{e.preventDefault();HOLD.pointers.add(e.pointerId);noteActivity();
@@ -1300,8 +1323,8 @@ function setTarget(k){G.target=k;$('targetTxt').textContent=k==='bomb'?'點選�
 function cancelTarget(silent){if(G)G.target=null;$('targetBar').hidden=true;renderBoosters();}
 $('targetCancel').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();cancelTarget();});
 const NAMES={time:'延時 +'+CFG.TIME_BONUS+'s',bomb:'小炸彈',bolt:'閃電大炸彈',wind:'大風吹',vacuum:'吸塵器',compress:'壓縮',freeze:'凍結 20 秒',clear:'清倉器'};
-const DESC={freeze:'倒數凍結 20 秒，仍可正常消除。',clear:'隨機退回收集槽一個玩具，不改變目標或牌的總數。',time:'倒數立即增加 '+CFG.TIME_BONUS+' 秒。',bomb:'選一個玩具，原地炸開並清除它與另外 2 個同款（共 3 個），計入目標。',bolt:'選一個中心，閃電連鎖清除附近 '+CFG.BOLT_TRIPLES+' 種玩具各 3 個（範圍明顯大於小炸彈）。',
-  wind:'整堆玩具大範圍漩渦旋轉後重新落定，保留牌數與遮擋關係。',vacuum:'收集槽每一塊各搭配畫面兩塊同款消一組，實際消除計入目標；不足一組者保留。',compress:'玩具暫時縮小 '+CFG.RESCUE.compressSec+' 秒，減少互相遮擋；收集槽仍是 7 格。'};
+const DESC={freeze:'倒數凍結 20 秒，仍可正常消除。',clear:'隨機退回收集槽一個玩具，不改變目標或牌的總數。',time:'倒數立即增加 '+CFG.TIME_BONUS+' 秒。',bomb:'選一個玩具，原地炸開並清除它與另外 2 個同款（共 3 個），計入目標。',bolt:'天空落雷隨機掃過全場，清除 2～3 組同款三消；不足時只清除剩餘完整組。',
+  wind:'順時鐘強風吹動全堆並隨機重排，停下後圖塊保持正向；牌數不變，只採用已找到合法解路的配置。',vacuum:'收集槽每一塊各搭配畫面兩塊同款消一組，實際消除計入目標；不足一組者保留。',compress:'玩具暫時縮小 '+CFG.RESCUE.compressSec+' 秒，減少互相遮擋；收集槽仍是 7 格。'};
 let LAST_BUY_ERR='';
 function buyBooster(k){ // transaction: check → apply → persist; if the write fails, roll back completely and report
   LAST_BUY_ERR='';const price=CFG.PRICE[k];
@@ -1338,9 +1361,8 @@ function fireBomb(k,target){
   if(!first){toast('動作進行中，請稍候再炸');return;}
   first.forEach(i=>used.add(i));groups.push(first);
   if(k==='bolt'){
-    const near=G.items.filter(i=>i.state==='pile'&&i.kind==='toy'&&!used.has(i)).map(i=>({i,d:(i.x-cx)**2+(i.y-cy)**2})).sort((a,b)=>a.d-b.d);
-    const tried=new Set([target.tid]);
-    for(const {i} of near){if(groups.length>=CFG.BOLT_TRIPLES)break;if(tried.has(i.tid))continue;tried.add(i.tid);
+    const near=boltCandidates(used).map(i=>({i})),limit=2+Math.floor(Math.random()*(CFG.BOLT_TRIPLES-1));
+    for(const {i} of near){if(groups.length>=limit)break;if(used.has(i))continue;
       const tr=tripleFor(i.tid,cx,cy,used,i);if(tr){tr.forEach(v=>used.add(v));groups.push(tr);}}
   }
   // commit: deduct exactly once (or refuse without any effect), then lock input for the whole effect
@@ -1396,11 +1418,13 @@ function applyHG(k,x,y){ // pure time effect; never touches active play time (G.
   burst(it.x,it.y,HG_LOOK[k].c,14);lastSec=-1;updateHud();
 }
 function nearestToys(cx,cy,used){return G.items.filter(i=>i.state==='pile'&&i.kind==='toy'&&!used.has(i)).map(i=>({i,d:(i.x-cx)**2+(i.y-cy)**2})).sort((a,b)=>a.d-b.d).map(o=>o.i);}
+// Spread lightning targets across the field instead of clustering around the trigger.
+function boltCandidates(used){const a=G.items.filter(i=>i.state==='pile'&&i.kind==='toy'&&!used.has(i));for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[a[j],a[k]]=[a[k],a[j]];}return a;}
 function planPickup(it){
   const used=new Set(),groups=[],cx=it.x,cy=it.y;
   const add=(tid,first)=>{const tr=tripleFor(tid,cx,cy,used,first);if(tr){tr.forEach(v=>used.add(v));groups.push(tr);return true;}return false;};
   if(it.ptype==='bomb'){for(const t of nearestToys(cx,cy,used)){if(add(t.tid,t))break;}}
-  else if(it.ptype==='bolt'){const tried=new Set();for(const t of nearestToys(cx,cy,used)){if(groups.length>=CFG.BOLT_TRIPLES)break;if(tried.has(t.tid))continue;tried.add(t.tid);add(t.tid,t);}}
+  else if(it.ptype==='bolt'){const limit=2+Math.floor(Math.random()*(CFG.BOLT_TRIPLES-1));for(const t of boltCandidates(used)){if(groups.length>=limit)break;if(used.has(t))continue;add(t.tid,t);}}
   else if(it.ptype==='missile'){ // missile: flies bottom→top along its column, exploding the first CFG.PICKUP.missileTypes toy types it passes
     const col=G.items.filter(i=>i.state==='pile'&&i.kind==='toy'&&Math.abs(i.x-cx)<S*.5).sort((a,b)=>b.y-a.y);const tried=new Set();
     for(const t of (col.length?col:nearestToys(cx,cy,used))){if(groups.length>=CFG.PICKUP.missileTypes)break;if(tried.has(t.tid)||used.has(t))continue;tried.add(t.tid);add(t.tid,t);}
@@ -1427,17 +1451,17 @@ function claimPickup(it){
 const SAMPLES=new Map();
 function sampleOffsets(spr){if(SAMPLES.has(spr))return SAMPLES.get(spr);const out=[];for(let py=6;py<SP;py+=9)for(let px=6;px<SP;px+=9)if(spr.mask[py*SP+px]>200)out.push([px/F-UNITS/2,py/F-UNITS/2]);SAMPLES.set(spr,out);return out;}
 function isSelectable(it){if(it.state!=='pile')return false;const off=sampleOffsets(sprOf(it)),ps=poseOf(it),c=Math.cos(ps.rot),s=Math.sin(ps.rot),k=esz(it)/100,f=ps.flip?-1:1;
-  for(const [ux,uy] of off){const u=ux*f;if(topAt(ps.x+(u*c-uy*s)*k,ps.y+(u*s+uy*c)*k)===it)return true;}return false;}
+  for(const [ux,uy] of off){const u=ux*f;if(touchAt(ps.x+(u*c-uy*s)*k,ps.y+(u*s+uy*c)*k)===it)return true;}return false;}
 function countSelectable(){return G.items.filter(i=>i.state==='pile'&&i.kind==='toy'&&isSelectable(i)).length;}
 /* Layout verifier for Big Wind: plays the proposed layout to a win with legal moves only (a piece is pickable when one of its own
-   silhouette samples is the topmost pixel). Model: final resting poses, full (uncompressed) size, no idle sway, no settling drift,
+   silhouette samples is the topmost touch target, including hollow-object envelopes). Model: final resting poses, full (uncompressed) size, no idle sway, no settling drift,
    pickups/keys/traps stay in place as obstacles, no boosters. Pieces in the tray or in flight count as already in the tray. */
 function verifyLayout(lay,attempts,seed){
   const pose=it=>{const L=lay.get(it);return L?{x:L.tx,y:L.ty,rot:L.trot,z:L.z}:{x:it.tx??it.x,y:it.ty??it.y,rot:it.trot??it.rot,z:it.z};};
   const P=G.items.filter(i=>i.state==='pile').map(it=>{const p=pose(it);return{it,x:p.x,y:p.y,rot:p.rot,z:p.z,sz:it.size,flip:it.flip,spr:sprOf(it),toy:it.kind==='toy',tid:it.tid,alive:true};}).sort((a,b)=>a.z-b.z);
   const hit=(q,x,y)=>{const dx=x-q.x,dy=y-q.y,rr=q.sz*.68;if(dx*dx+dy*dy>rr*rr)return false;const c=Math.cos(q.rot),s=Math.sin(q.rot),k=q.sz/100;
     const ux=(dx*c+dy*s)/k*(q.flip?-1:1),uy=(-dx*s+dy*c)/k,px=Math.floor((ux+UNITS/2)*F),py=Math.floor((uy+UNITS/2)*F);
-    return px>=0&&py>=0&&px<SP&&py<SP&&q.spr.mask[py*SP+px]>110;};
+    return (px>=0&&py>=0&&px<SP&&py<SP&&q.spr.mask[py*SP+px]>110)||(q.toy&&hollowHit(TOYS[q.tid].shape,ux,uy));};
   const top=(x,y)=>{if(!inPile(x,y))return null;for(let i=P.length-1;i>=0;i--){const q=P[i];if(q.alive&&hit(q,x,y))return q;}return null;};
   const vis=q=>{const off=sampleOffsets(q.spr),c=Math.cos(q.rot),s=Math.sin(q.rot),k=q.sz/100,f=q.flip?-1:1;
     for(const [ux,uy] of off){const u=ux*f;if(top(q.x+(u*c-uy*s)*k,q.y+(u*s+uy*c)*k)===q)return true;}return false;};
@@ -1465,8 +1489,17 @@ const RESCUE_PLAN={ // each plan only inspects; nothing changes until apply() ru
     if(G.action||G.wind)return{ok:false,msg:'效果進行中（未消耗）'};
     const pile=G.items.filter(i=>i.state==='pile');
     if(pile.length<2)return{ok:false,msg:'玩具太少（未消耗）'};
-    return{ok:true,apply(){cancelHold('wind');G.wind={t:0,dur:reducedMotion()?.35:2.4,poses:pile.map(it=>({it,x:it.x,y:it.y,rot:it.rot}))};
-      G.lastRescue={k:'wind',lifted:pile.map(i=>i.uid)};sfx.rocket();}};
+    // Plan before spending: randomise the resting positions, keep identities/counts, and verify upright final poses.
+    let accepted=null,proof=null;
+    for(let attempt=0;attempt<CFG.RESCUE.windCandidates&&!accepted;attempt++){
+      const slots=pile.map(it=>({x:it.x,y:it.y}));for(let j=slots.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[slots[j],slots[k]]=[slots[k],slots[j]];}
+      const lay=new Map();pile.forEach((it,j)=>{const m=Math.min(it.size*.45,PILE.w*.2,PILE.h*.2);lay.set(it,{tx:clamp(slots[j].x+(Math.random()-.5)*S*.55,PILE.x+m,PILE.x+PILE.w-m),ty:clamp(slots[j].y+(Math.random()-.5)*S*.55,PILE.y+m,PILE.y+PILE.h-m),trot:0,z:it.z});});
+      const moved=pile.some(it=>Math.hypot(lay.get(it).tx-it.x,lay.get(it).ty-it.y)>S*.5);if(!moved)continue;
+      const result=verifyLayout(lay,CFG.RESCUE.windAttempts,((G.lv.seed||1)+attempt*7919)>>>0);if(result.ok){accepted=lay;proof=result;}
+    }
+    if(!accepted)return{ok:false,msg:'這次未找到可續玩的重排配置，未消耗；可先消除幾塊再試。'};
+    return{ok:true,apply(){cancelHold('wind');G.wind={t:0,dur:reducedMotion()?.35:2.6,reduced:reducedMotion(),poses:pile.map(it=>({it,x:it.x+it.jx,y:it.y+it.jy,rot:it.rot+it.jr,...accepted.get(it)}))};
+      G.lastRescue={k:'wind',lifted:pile.map(i=>i.uid),verified:proof,upright:true};sfx.rocket();}};
   },
   vacuum(){
     if(G.action||G.wind||G.tray.some(i=>i.state==='fly'))return{ok:false,msg:'請等圖塊落定（未消耗）'};
@@ -1534,12 +1567,16 @@ function settleAround(rem){
     p.trot=(p.trot??p.rot)+(Math.abs((Math.sin(p.uid*39.346+rem.uid*11.135)*24634.6345)%1)-.5)*2*M.settleRot*fall;}
   G.settling=true;
 }
-const ACT={bomb:{fly:.26,pop:.62,end:.8},bolt:{fly:.32,pop:1.0,end:1.3},rocket:{fly:0,pop:.9,end:1.15},missile:{fly:0,pop:.9,end:1.15},vacuum:{fly:0,pop:.6,end:.8}};
+const ACT={bomb:{fly:.26,pop:.62,end:.8},bolt:{fly:.32,pop:1.0,end:1.3},rocket:{fly:0,pop:.9,end:1.15},missile:{fly:0,pop:.9,end:1.15},vacuum:{fly:0,pop:1.05,end:1.3}};
 function updateAction(dt){
   const a=G.action;if(!a)return;a.t+=dt;const T=ACT[a.k];
   if(a.k==='vacuum'){ // suck the chosen obstacle triples into the vacuum button, then pop
     if(!a.sounded){a.sounded=true;sfx.rocket();}
-    const k=Math.min(1,dt*6);a.victims.forEach(v=>{v.x+=(a.sx-v.x)*k;v.y+=(a.sy-v.y)*k;v.vsize*=1-dt*1.2;});
+    const u=Math.min(1,a.t/T.pop),k=easeIO(u),rm=reducedMotion();
+    a.victims.forEach((v,j)=>{if(v.state!=='fx')return;if(v.suckSize==null){v.suckSize=v.vsize;v.suckRot=v.rot;}
+      const amp=rm?0:Math.sin(Math.PI*u)*(1-u)*S*.9,ang=u*TAU*1.6+j*2.1;
+      v.x=v.ox+(a.sx-v.ox)*k+Math.cos(ang)*amp;v.y=v.oy+(a.sy-v.oy)*k+Math.sin(ang)*amp;
+      v.rot=rm?v.suckRot:v.suckRot+u*TAU;v.vsize=v.suckSize*(1-.96*k);});
     if(a.t>=T.pop&&!a.popped){a.popped=true;a.groups.forEach(g=>popGroup(g));}
     if(a.t>=T.end){G.action=null;if(!G.endKind)checkMatches();}
     return;}
@@ -1557,19 +1594,22 @@ function updateAction(dt){
   }
   if(!a.boomed&&a.t>=T.fly){a.boomed=true;
     if(a.k==='bomb'){sfx.boom();G.shake=8;G.flash=.3;ring(a.cx,a.cy,S*1.7,'#fff2a0',.5,12);ring(a.cx,a.cy,S*1.1,'#ff9a1a',.4,8);burst(a.cx,a.cy,'#ffb11a',22);burst(a.cx,a.cy,'#ffffff',10);}
-    else{sfx.thunder();G.shake=14;G.flash=.6;ring(a.cx,a.cy,S*2.6,'#fff7b0',.6,14);ring(a.cx,a.cy,S*1.6,'#9fe6ff',.5,8);burst(a.cx,a.cy,'#ffe14a',36);burst(a.cx,a.cy,'#bfefff',20);}
+    else{sfx.thunder();G.shake=reducedMotion()?0:5;G.flash=reducedMotion()?0:.12;ring(a.cx,a.cy,S*2.6,'#fff7b0',.6,14);ring(a.cx,a.cy,S*1.6,'#9fe6ff',.5,8);burst(a.cx,a.cy,'#ffe14a',36);burst(a.cx,a.cy,'#bfefff',20);}
   }
   if(a.boomed){
     const k=Math.min(1,dt*(a.k==='bomb'?5:2.2));
     a.victims.forEach(v=>{const tx=a.k==='bomb'?a.cx:v.ox+(a.cx-v.ox)*.12,ty=a.k==='bomb'?a.cy:v.oy+(a.cy-v.oy)*.12;v.x+=(tx-v.x)*k;v.y+=(ty-v.y)*k;});
-    if(a.k==='bolt'){a.boltT-=dt;if(a.boltT<=0){a.boltT=.055;a.bolts=makeBolts(a);}}
+    if(a.k==='bolt'&&!a.popped){a.boltT-=dt;if(a.boltT<=0){a.boltT=reducedMotion()?10:.4;a.bolts=makeBolts(a);}}
   }
   if(a.boomed&&!a.popped&&a.t>=T.pop){a.popped=true;a.bolts=[];a.groups.forEach(g=>popGroup(g));}
   if(a.t>=T.end){G.action=null;if(!G.endKind)checkMatches();}
 }
 function jag(x0,y0,x1,y1,amp){const pts=[[x0,y0]],n=8,dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
   for(let i=1;i<n;i++){const t=i/n,o=(Math.random()-.5)*amp*2*Math.sin(t*Math.PI);pts.push([x0+dx*t+nx*o,y0+dy*t+ny*o]);}pts.push([x1,y1]);return pts;}
-function makeBolts(a){const out=[];a.groups.forEach(g=>{g.forEach(v=>out.push(jag(a.cx,a.cy,v.x,v.y,S*.35)));for(let i=0;i<g.length-1;i++)out.push(jag(g[i].x,g[i].y,g[i+1].x,g[i+1].y,S*.2));});return out;}
+function makeBolts(a){const out=[],rm=reducedMotion();
+  // Two bounded sweeps, no rapid full-screen strobe. Each path advances vertically from the top to the bottom.
+  const n=rm?2:5;for(let i=0;i<n;i++){const x=PILE.x+PILE.w*((i+.25+Math.random()*.5)/n);out.push(jag(x,0,x+(Math.random()-.5)*S*.4,H,rm?0:S*.18));}
+  for(const g of a.groups){const v=g[0];out.push(jag(v.ox,0,v.ox,v.oy,rm?0:S*.16));}return out;}
 
 /* ---------- effects ---------- */
 function burst(x,y,c,n){for(let i=0;i<n;i++){const a=Math.random()*TAU,s=90+Math.random()*220;G.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-80,life:.65,max:.65,c,r:2.5+Math.random()*4.5});}}
@@ -1803,9 +1843,9 @@ function drawHomeIcons(){const c=$('homeIcons'),r=c.getBoundingClientRect(),d=Ma
 /* ---------- update ---------- */
 function computeShade(){
   const pile=G.sorted.filter(i=>i.state==='pile');
-  for(let a=0;a<pile.length;a++){const A=pile[a];let c=0;
-    for(let b=a+1;b<pile.length;b++){const B=pile[b];const md=(esz(A)+esz(B))*.36;if((B.x-A.x)**2+(B.y-A.y)**2<md*md)c++;}
-    A.tshade=Math.min(.46,c*.17);}
+  for(const A of pile){
+    A.tshade=0;A.shade=0; // Stable face colour at every depth; baked edge/shadow still conveys stacking.
+  }
   // top CFG.MOTION.dynamicCount pieces are drawn live (idle sway); everything below stays in the cached layer
   const K=CFG.MOTION.dynamicCount,zc=pile.length>K?pile[pile.length-K].z:-1;
   pile.forEach(i=>{i.dyn=i.z>=zc;if(!i.dyn){i.jx=i.jy=i.jr=0;}});G.zCut=zc;G.pileDirty=G.dynDirty=true;
@@ -1833,10 +1873,13 @@ function update(dt){
     if(it.dyn&&swayNow&&!it.held){it.jx=M.idleAmp*Math.sin(tc*it.f1+it.p1);it.jy=M.idleAmp*Math.sin(tc*it.f2+it.p2);it.jr=M.idleRot*Math.sin(tc*.8*it.f1+it.p3);}
     if(it.spawnT!=null){it.spawnT+=dt/.35;G.dynDirty=true;if(it.spawnT>=1)it.spawnT=null;}}
   if(G.wind){const w=G.wind;w.t+=dt;const u=Math.min(1,w.t/w.dur),cx=PILE.x+PILE.w/2,cy=PILE.y+PILE.h/2;
-    for(const p of w.poses){const it=p.it,dx=(p.x-cx)/(PILE.w/2),dy=(p.y-cy)/(PILE.h/2),a=3*Math.PI*u;
-      const rad=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)+a,scale=1-.22*Math.sin(Math.PI*u);
-      const margin=it.size*.42;it.x=clamp(cx+Math.cos(ang)*rad*scale*PILE.w/2,PILE.x+margin,PILE.x+PILE.w-margin);it.y=clamp(cy+Math.sin(ang)*rad*scale*PILE.h/2,PILE.y+margin,PILE.y+PILE.h-margin);it.rot=p.rot+a;it.jx=it.jy=it.jr=0;
-      if(u===1){it.x=2*cx-p.x;it.y=2*cy-p.y;it.rot=p.rot+Math.PI;it.tx=it.ty=it.trot=null;}}
+    for(const p of w.poses){const it=p.it,k=easeIO(u),dx=p.x-cx,dy=p.y-cy,a=TAU*1.35*u;
+      // Positive angle is clockwise in canvas coordinates. Blend into random destinations, not a fixed half-turn.
+      const swirl=w.reduced?0:Math.sin(Math.PI*u),rx=cx+Math.cos(a)*dx-Math.sin(a)*dy,ry=cy+Math.sin(a)*dx+Math.cos(a)*dy;
+      const bx=p.x+(p.tx-p.x)*k,by=p.y+(p.ty-p.y)*k,m=Math.min(it.size*.42,PILE.w*.2,PILE.h*.2);
+      it.x=clamp(bx+(rx-bx)*swirl,PILE.x+m,PILE.x+PILE.w-m);it.y=clamp(by+(ry-by)*swirl,PILE.y+m,PILE.y+PILE.h-m);
+      it.rot=w.reduced?p.rot*(1-k):(p.rot+a)*(1-k);it.jx=it.jy=it.jr=0;
+      if(u===1){it.x=p.tx;it.y=p.ty;it.rot=0;it.tx=it.ty=it.trot=null;}}
     G.pileDirty=G.dynDirty=G.shadeDirty=true;if(u===1)G.wind=null;}
   if(moving)G.pileDirty=true;
   const ts=traySize();
@@ -1945,11 +1988,18 @@ function render(now){
     if(a.k==='rocket'){fctx.setTransform(DPR,0,0,DPR,0,0);const tr=fctx.createLinearGradient(a.rx-S*3,0,a.rx,0);tr.addColorStop(0,'rgba(255,210,31,0)');tr.addColorStop(1,'rgba(255,240,150,.85)');
       fctx.fillStyle=tr;fctx.beginPath();fctx.moveTo(a.rx-S*3,a.cy);fctx.lineTo(a.rx-S*.3,a.cy-S*.22);fctx.lineTo(a.rx-S*.3,a.cy+S*.22);fctx.closePath();fctx.fill();
       drawSpr(fctx,ICON.rocketFly,a.rx+sx,a.cy+sy,Math.sin(now/40)*.05,S*1.15,1,0,'#ffe066');}
+    if(a.k==='vacuum'&&!a.popped){fctx.setTransform(DPR,0,0,DPR,0,0);const u=Math.min(1,a.t/T.pop),rm=reducedMotion();
+      const cone=fctx.createLinearGradient(a.cx,a.cy,a.sx,a.sy);cone.addColorStop(0,'rgba(130,225,255,0)');cone.addColorStop(1,'rgba(180,245,255,.4)');
+      fctx.fillStyle=cone;fctx.beginPath();fctx.moveTo(PILE.x,PILE.y+PILE.h*.15);fctx.quadraticCurveTo(a.cx,a.cy,a.sx-S*.15,a.sy);fctx.lineTo(a.sx+S*.15,a.sy);fctx.quadraticCurveTo(a.cx,a.cy,PILE.x+PILE.w,PILE.y+PILE.h*.15);fctx.closePath();fctx.fill();
+      fctx.lineCap='round';for(let j=0;j<(rm?4:15);j++){const phase=rm?.65:(u*1.7+j/15)%1,ang=j*2.399,r=(1-phase)*Math.max(PILE.w,PILE.h)*.6;
+        const x=a.sx+Math.cos(ang+phase*2)*r,y=a.sy-Math.abs(Math.sin(ang))*r-r*.3;
+        fctx.strokeStyle=`rgba(210,250,255,${.25+.6*phase})`;fctx.lineWidth=2+3*phase;fctx.beginPath();fctx.moveTo(x,y);fctx.quadraticCurveTo((x+a.sx)/2+S*.25,(y+a.sy)/2,a.sx,a.sy);fctx.stroke();}
+      fctx.strokeStyle='#d5fcff';fctx.lineWidth=4;fctx.beginPath();fctx.arc(a.sx,a.sy,S*(.22+.08*Math.sin(u*Math.PI)),0,TAU);fctx.stroke();}
     for(const v of a.victims){if(v.state==='fx')drawSpr(fctx,SPR[v.tid],v.x+sx,v.y+sy,v.rot,v.vsize*(a.boomed?pulse:1),1,0,glow,false,v.flip&&!v.vtray);}
     if(a.bolts.length){fctx.setTransform(DPR,0,0,DPR,0,0);fctx.lineCap='round';fctx.lineJoin='round';
-      for(const pts of a.bolts){fctx.beginPath();pts.forEach((p,i)=>i?fctx.lineTo(p[0]+sx,p[1]+sy):fctx.moveTo(p[0]+sx,p[1]+sy));
+      for(const pts of a.bolts){const frac=reducedMotion()?1:Math.min(1,(.4-a.boltT)/.16),count=Math.max(2,Math.ceil(pts.length*frac));fctx.beginPath();pts.slice(0,count).forEach((p,i)=>i?fctx.lineTo(p[0]+sx,p[1]+sy):fctx.moveTo(p[0]+sx,p[1]+sy));
         fctx.strokeStyle='rgba(255,226,80,.28)';fctx.lineWidth=16;fctx.stroke();fctx.strokeStyle='rgba(255,236,120,.95)';fctx.lineWidth=6;fctx.stroke();fctx.strokeStyle='#ffffff';fctx.lineWidth=2.4;fctx.stroke();}}
-    if(a.boomed&&!a.popped&&a.k!=='rocket'&&a.k!=='missile'&&a.k!=='vacuum'){ // radial impact rays
+    if(a.boomed&&!a.popped&&a.k==='bomb'){ // radial impact rays
       fctx.setTransform(DPR,0,0,DPR,0,0);const k=(a.t-T.fly)/(T.pop-T.fly),n=a.k==='bolt'?16:10,len=S*(a.k==='bolt'?2.2:1.15);
       fctx.lineCap='round';for(let i=0;i<n;i++){const ang=i/n*TAU+(a.k==='bolt'?Math.sin(now/50+i)*.08:.2),r0=S*(.45+k*.3),r1=r0+len*(.5+.5*Math.sin(i*1.7+now/(a.k==='bolt'?45:90)))*(1-k*.5);
         fctx.globalAlpha=(1-k)*.95;fctx.strokeStyle=i%2?'#fff7c2':'#ffd21f';fctx.lineWidth=a.k==='bolt'?5:6;fctx.beginPath();fctx.moveTo(a.cx+Math.cos(ang)*r0+sx,a.cy+Math.sin(ang)*r0+sy);fctx.lineTo(a.cx+Math.cos(ang)*r1+sx,a.cy+Math.sin(ang)*r1+sy);fctx.stroke();}
@@ -2002,7 +2052,7 @@ document.addEventListener('visibilitychange',()=>{const now=performance.now();if
 function loop(now){const raw=now-last,dt=Math.min(.05,raw/1000);last=now;
   activeClock(performance.now());frameEMA=frameEMA*.9+Math.min(100,raw)*.1;update(dt);render(now);updateHud();requestAnimationFrame(loop);}
 addEventListener('resize',()=>{const op={...PILE},ot={...TRAY};layout();
-  if(G){if(G.wind){for(const p of G.wind.poses){p.it.x=p.x;p.it.y=p.y;p.it.rot=p.rot;}G.wind=null;}const sw=PILE.w/op.w,sh=PILE.h/op.h,ss=Math.min(sw,sh);G.items.forEach(it=>{if(it.state==='pile'||it.state==='fx'){it.x=PILE.x+(it.x-op.x)*sw;it.y=PILE.y+(it.y-op.y)*sh;it.size=Math.max(it.kind==='toy'?44:0,it.size*ss);if(it.tx!=null){it.tx=PILE.x+(it.tx-op.x)*sw;it.ty=PILE.y+(it.ty-op.y)*sh;}}});S*=ss;}
+  if(G){if(G.wind){for(const p of G.wind.poses){p.it.x=p.tx;p.it.y=p.ty;p.it.rot=0;p.it.tx=p.it.ty=p.it.trot=null;p.it.jx=p.it.jy=p.it.jr=0;}G.wind=null;}const sw=PILE.w/op.w,sh=PILE.h/op.h,ss=Math.min(sw,sh);G.items.forEach(it=>{if(it.state==='pile'||it.state==='fx'){it.x=PILE.x+(it.x-op.x)*sw;it.y=PILE.y+(it.y-op.y)*sh;it.size=Math.max(it.kind==='toy'?44:0,it.size*ss);if(it.tx!=null){it.tx=PILE.x+(it.tx-op.x)*sw;it.ty=PILE.y+(it.ty-op.y)*sh;}}});S*=ss;}
   if(!G)drawHomeIcons();});
 applyCbMarks(!!SAVE.cbMarks);layout();renderHome();renderBoosters();renderWallet();requestAnimationFrame(loop);
 document.documentElement.dataset.boot='ok';
@@ -2019,3 +2069,4 @@ window.PileRush={activeClock,stopActive,resumeActive,verifyLayout,RESCUE,RESCUE_
 </script>
 </body>
 </html>
+
